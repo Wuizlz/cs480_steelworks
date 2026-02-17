@@ -1,0 +1,269 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap");
+
+:root {
+  /* Core palette and layout tokens. */
+  color-scheme: light;
+  --bg: #f5efe8;
+  --bg-accent: #f7f2ec;
+  --ink: #1f1d1a;
+  --muted: #5a534b;
+  --brand: #b4512f;
+  --brand-dark: #7e3418;
+  --line: rgba(31, 29, 26, 0.12);
+  --panel: #fff9f3;
+  --shadow: 0 18px 45px rgba(31, 29, 26, 0.12);
+}
+
+* {
+  /* Normalize box sizing for predictable layout. */
+  box-sizing: border-box;
+}
+
+body {
+  /* Layered background adds visual depth without images. */
+  margin: 0;
+  background: radial-gradient(circle at top left, #fff7ee, transparent 60%),
+    radial-gradient(circle at top right, #f3e6d7, transparent 55%),
+    var(--bg);
+  color: var(--ink);
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+}
+
+.app {
+  /* Center the content and set comfortable spacing. */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.hero {
+  /* Two-column hero on desktop; stacked on mobile. */
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: stretch;
+}
+
+.eyebrow {
+  /* Uppercase label for the product category. */
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 12px;
+  color: var(--brand-dark);
+  font-weight: 600;
+}
+
+h1 {
+  /* Serif headline for emphasis and hierarchy. */
+  font-family: "Fraunces", "Times New Roman", serif;
+  font-size: clamp(32px, 4vw, 52px);
+  margin: 12px 0;
+}
+
+.subtitle {
+  /* Secondary copy style. */
+  color: var(--muted);
+  font-size: 18px;
+  max-width: 560px;
+  line-height: 1.6;
+}
+
+.hero-card {
+  /* Summary metadata card. */
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 20px;
+  border-radius: 20px;
+  display: grid;
+  gap: 16px;
+  box-shadow: var(--shadow);
+}
+
+.meta-label {
+  /* Small caps label for metadata blocks. */
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+
+.meta-value {
+  /* Bold values to stand out from labels. */
+  font-weight: 600;
+  margin: 0;
+}
+
+.panel {
+  /* Main card surface for each reporting section. */
+  background: var(--panel);
+  border-radius: 24px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.6s ease;
+}
+
+.panel-header {
+  /* Title + helper copy layout. */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+h2 {
+  /* Section headings. */
+  margin: 0;
+  font-size: 24px;
+}
+
+.panel-help {
+  /* Secondary helper text for forms. */
+  margin: 0;
+  color: var(--muted);
+}
+
+.form-grid {
+  /* Responsive form layout. */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+label {
+  /* Stack label text above input controls. */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+input {
+  /* Input controls share consistent sizing and color. */
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  font-size: 14px;
+  background: #fffdfb;
+  color: var(--ink);
+}
+
+button {
+  /* Primary action button styling. */
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: none;
+  background: var(--brand);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 20px rgba(180, 81, 47, 0.28);
+}
+
+button:disabled {
+  /* Dim disabled buttons to indicate inactivity. */
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button:hover {
+  /* Subtle lift for hover feedback. */
+  transform: translateY(-1px);
+}
+
+button.ghost {
+  /* Secondary button styling. */
+  background: transparent;
+  color: var(--brand-dark);
+  border: 1px solid rgba(126, 52, 24, 0.35);
+  box-shadow: none;
+}
+
+.table-wrap {
+  /* Scroll wrapper keeps tables responsive on smaller screens. */
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fffdfb;
+}
+
+table {
+  /* Full-width table layout. */
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+thead {
+  /* Header styling to separate column labels. */
+  background: #f1e5d7;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+th,
+td {
+  /* Consistent cell spacing. */
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+tr:hover td {
+  /* Row highlight on hover for readability. */
+  background: #fdf4ea;
+}
+
+tr.clickable td {
+  /* Clickable rows for drill-down interactivity. */
+  cursor: pointer;
+}
+
+.job-result {
+  /* Highlight job processing output. */
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f7e9dc;
+  color: var(--brand-dark);
+  font-weight: 500;
+}
+
+.error {
+  /* Error message styling for API failures. */
+  color: #9e2b15;
+  background: #fde9e1;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(158, 43, 21, 0.2);
+}
+
+@keyframes fadeIn {
+  /* Gentle entrance for panels. */
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  /* Switch hero to a single column on narrow screens. */
+  .hero {
+    grid-template-columns: 1fr;
+  }
+}
