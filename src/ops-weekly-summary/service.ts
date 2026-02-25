@@ -5,21 +5,25 @@ import {
   UnderlyingRecordsQuery,
   WeekRange,
   WeeklyIssueSummaryReport,
-} from './types';
-import { WeeklyIssueSummaryRepository } from './repository';
+} from "./types";
+import { WeeklyIssueSummaryRepository } from "./repository";
 
 export class WeeklyIssueSummaryService {
   constructor(private readonly repo: WeeklyIssueSummaryRepository) {}
 
   // Returns the weekly summary rows and excluded counts for a selected week range (AC1–AC3, AC12).
-  async getWeeklySummaryReport(range: WeekRange): Promise<WeeklyIssueSummaryReport> {
-    throw new Error('Not implemented');
+  async getWeeklySummaryReport(
+    range: WeekRange,
+  ): Promise<WeeklyIssueSummaryReport> {
+    void range;
+    throw new Error("Not implemented");
   }
 
   // Returns underlying records contributing to a weekly total for auditability (AC11).
   async getUnderlyingRecords(
-    query: UnderlyingRecordsQuery
+    query: UnderlyingRecordsQuery,
   ): Promise<UnderlyingRecord[]> {
-    throw new Error('Not implemented');
+    void query;
+    throw new Error("Not implemented");
   }
 }

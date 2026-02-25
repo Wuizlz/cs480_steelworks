@@ -8,13 +8,13 @@ export interface WeekRange {
   endWeek: ISODateString;
 }
 
-export type IssueSource = 'PRODUCTION' | 'SHIPPING';
+export type IssueSource = "PRODUCTION" | "SHIPPING";
 
 export type ExclusionReason =
-  | 'UNMATCHED_LOT_ID'
-  | 'INVALID_LOT_ID'
-  | 'CONFLICT'
-  | 'INCOMPLETE_DATA';
+  | "UNMATCHED_LOT_ID"
+  | "INVALID_LOT_ID"
+  | "CONFLICT"
+  | "INCOMPLETE_DATA";
 
 // Weekly summary output (AC1–AC3, AC9–AC10)
 export interface WeeklySummaryRow {
