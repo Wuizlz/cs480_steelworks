@@ -1,6 +1,7 @@
 ## Assumptions & Scope — Campus Event Hub
 
 ### Assumptions
+
 - **Internal university system**: Only intended for university-affiliated users (students, org leaders, staff).
 - **User volume & roles**:
   - Hundreds of students browsing/searching events.
@@ -16,6 +17,7 @@
 - **Performance target**: Search/browse pages should return results within a few seconds under expected load.
 
 ### In Scope
+
 - Event submission by student organization leaders with validation and confirmation messaging.
 - Admin review workflow (view submitted events, approve/reject).
 - Event discovery for students:
@@ -28,6 +30,7 @@
   - Changes to one feature should not break unrelated features.
 
 ### Out of Scope
+
 - Native mobile applications (iOS/Android).
 - Public APIs for external partners or third-party integrations.
 - Real-time chat, messaging, or live streaming features.
