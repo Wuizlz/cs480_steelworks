@@ -6,6 +6,16 @@
   "scripts": {
     "test": "jest"
   },
+  "lint-staged": {
+  "*.{ts,tsx}": [
+    "eslint --max-warnings=0",
+    "prettier --check"
+  ],
+  "*.{js,jsx,json,md,yml,yaml}": [
+    "prettier --check"
+  ]
+}
+,
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
