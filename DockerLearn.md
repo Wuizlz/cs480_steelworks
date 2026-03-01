@@ -25,6 +25,7 @@ CMD ["npm", "test"]
 **`FROM node:20-alpine`**
 
 This selects a base image. `node:20-alpine` is the official Node.js image with:
+
 - Node.js v20
 - npm
 - Alpine Linux as the underlying operating system
@@ -49,6 +50,7 @@ Why copy only these first? It allows Docker to cache the dependency install laye
 **`RUN npm ci`**
 
 `npm ci` installs dependencies exactly as listed in `package-lock.json`. It is:
+
 - faster
 - more deterministic
 - fails if the lockfile and `package.json` are out of sync
@@ -84,3 +86,127 @@ docker run --rm markdown-demo
 ```
 
 This builds the image and runs the tests in a container.
+
+## Setup and Troubleshooting Notes (macOS)
+
+**Q: Why does `docker` say “command not found”?**  
+**A:** That means the Docker CLI isn’t installed or not on your PATH. On macOS, the normal fix is to install and start Docker Desktop, which provides both the CLI and the Linux VM that runs the Docker engine.
+
+**Q: What is Docker Desktop and why is it required on macOS?**  
+**A:** Docker Desktop is the macOS app that runs a lightweight Linux VM in the background. The Docker daemon (server) runs inside that VM, and your `docker` CLI talks to it. Containers are created inside the VM and use Linux kernel isolation (namespaces + cgroups).
+
+**Q: Is this OS-level virtualization?**  
+**A:** On Linux, yes—containers share the host kernel. On macOS, containers still use OS-level isolation, but they share the Linux kernel inside the Docker Desktop VM (not the macOS kernel).
+
+**Q: What is a “cask” in Homebrew?**  
+**A:** A cask is Homebrew’s way of installing GUI apps and large binaries. Docker Desktop is installed via a cask.
+
+## Commands We Ran (and What They Do)
+
+```bash
+which docker
+```
+
+Shows whether the Docker CLI is available in your PATH.
+
+```bash
+ls /Applications/Docker.app
+```
+
+Checks whether Docker Desktop is installed in Applications.
+
+```bash
+brew install --cask docker
+```
+
+Installs Docker Desktop on macOS using Homebrew.
+
+```bash
+open -a Docker
+```
+
+Launches Docker Desktop (starts the Linux VM and Docker daemon).
+
+```bash
+docker version
+```
+
+Verifies Docker is running. You should see **Client** (macOS) and **Server** (Linux) output. The server OS/Arch (e.g., `linux/arm64`) confirms the VM is running.
+
+```bash
+docker build -t my-app .
+```
+
+Builds an image named `my-app` using the Dockerfile in the current directory. This pulls the base image, installs dependencies, and copies your project into the image.
+
+```bash
+docker run --rm -p 3000:3000 my-app
+```
+
+Runs a container from the `my-app` image, mapping container port 3000 to your host port 3000. `--rm` removes the container when it exits.
+
+## Behavior We Observed
+
+**Q: Why did `docker run` execute tests and exit?**  
+**A:** The Dockerfile’s `CMD` is `["npm", "test"]`, so the container runs tests and then stops. If you want it to run a server, set `CMD` to your start command (for example, `["npm", "run", "start"]`) or override it at runtime.
+
+**Q: Do containers affect each other’s environment?**  
+**A:** Not by default. Each container has its own filesystem and process namespace. They only share data if you explicitly connect them (shared volumes, networks, or ports).
+
+## Build vs Run Breakdown (Step-by-Step)
+
+**`docker build -t my-app .`**
+
+1. CLI sends the Dockerfile + build context to the Docker daemon.
+2. Daemon pulls the base image (e.g., `node:20-alpine`) if missing.
+3. Executes Dockerfile steps in order:
+   - `WORKDIR /app` sets working directory inside the image.
+   - `COPY package*.json ./` copies dependency manifests.
+   - `RUN npm ci` installs dependencies **inside the image**.
+   - `COPY . .` copies the rest of the project (excluding `.dockerignore`).
+4. Produces image layers and stores the image in `Docker.raw`.
+
+**`docker run --rm -p 3000:3000 my-app`**
+
+1. CLI sends a run request to the daemon.
+2. Daemon creates a container from the **already-built** image.
+3. Sets up namespaces/cgroups and mounts the image filesystem.
+4. Executes the image’s `CMD` (or an override).
+5. `--rm` removes the container after it exits.
+6. `-p 3000:3000` maps container port 3000 to your host.
+
+## Additional Q&A (Polished Notes)
+
+**Q: Is an image an “isolated environment”?**  
+**A:** No. An image is just a stored filesystem snapshot plus metadata. Isolation only happens when you **run** an image and create a container.
+
+**Q: What exactly happens during `docker build`?**  
+**A:** The Docker CLI sends your Dockerfile and build context to the Docker daemon. The daemon executes the steps (pull base image, set `WORKDIR`, copy files, run `npm ci`, etc.) and stores the resulting image layers in `Docker.raw`.
+
+**Q: What exactly happens during `docker run`?**  
+**A:** The CLI sends a request to the daemon. The daemon creates a container from the **already-built** image, sets up namespaces/cgroups, mounts the image filesystem, and executes the image’s `CMD` (or a command you override).
+
+**Q: Does `docker run` re‑install dependencies or re‑copy files?**  
+**A:** No. Dependency installs and file copies happen at **build** time. At **run** time, the container just starts from the image’s saved filesystem.
+
+**Q: Where are images stored on macOS?**  
+**A:** Inside the Linux VM’s disk image file: `~/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw`. This file is managed by Docker Desktop.
+
+**Q: Is `Docker.raw` the Docker Desktop app?**  
+**A:** No. Docker Desktop is `/Applications/Docker.app`. `Docker.raw` is the VM’s disk file that stores images, containers, and volumes.
+
+**Q: Why is Docker Desktop needed on macOS?**  
+**A:** macOS doesn’t have a Linux kernel. Docker Desktop runs a lightweight Linux VM that provides the kernel and runs the Docker daemon.
+
+**Q: Is this OS‑level virtualization?**  
+**A:** Yes—inside the Linux VM. Containers share that VM’s Linux kernel and are isolated via namespaces/cgroups.
+
+**Q: What is Linux vs GNU?**  
+**A:** Linux is the **kernel**. GNU is the **userland** (core tools and libraries). Most distros use both (GNU/Linux).
+
+**Q: What userland does Alpine use?**  
+**A:** Alpine uses `musl` (C library) and BusyBox (core utilities), not GNU. That’s why Alpine images are small.
+
+## Additional Notes
+
+\*\* https://docs.google.com/document/d/17dEICxjabL-h-PZ8UkHZVdCgH_3KwFEMh7H83i_fDMY/edit?usp=sharing

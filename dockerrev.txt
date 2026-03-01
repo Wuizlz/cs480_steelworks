@@ -1,0 +1,430 @@
+so snapshot of the filesystem meaning it tells the docker desktop to os-level-vis this snapshot of these filesystem isolate it, start node js alpine distro envinronment? direct this to /app copy json files run npm ci from node environment then copy all the other files thats not in docker ignore?
+
+Close. Here’s the precise version:
+
+The image is a snapshot of a filesystem plus metadata (like the default command).
+Docker Desktop just provides the Linux VM and the Docker daemon. It doesn’t “OS‑level‑virtualize” each image.
+When you run an image, the daemon starts a container (a process isolated by namespaces/cgroups) using that image’s filesystem.
+Build steps in your Dockerfile:
+
+FROM node:20-alpine
+Pulls a base image that already has Node.js + npm on Alpine Linux.
+WORKDIR /app
+Sets the working directory inside the image.
+COPY package.json package-lock.json ./
+Copies only those files into the image.
+RUN npm ci
+Installs dependencies inside the image.
+COPY . .
+Copies the rest of your project except what’s in .dockerignore.
+So yes: it builds a Linux filesystem (with Node + your app), and later when you run it, Docker starts an isolated container from that image.
+
+
+okay but starting this dockerfile or whatever always results to it being inserted into our desktop docker, which this application under the hoode has a light weight vm? that uses the ram and stroage provided by the computer or kernal but its os is kernal so it can isolate different running containers?
+
+Yes — on macOS:
+
+Docker Desktop runs a lightweight Linux VM.
+When you docker build, the image is stored inside that VM.
+When you docker run, containers run inside that VM, using its Linux kernel.
+The VM uses CPU/RAM/disk allocated from your Mac, but the containers are isolated from each other via namespaces + cgroups.
+So: images/containers live inside the VM, which gives them a Linux kernel and isolation.
+
+
+is linux an os or kernal? ik linux is paired ith gnu to make it a full fledge os
+
+Linux is the kernel.
+A full operating system is the kernel plus userland tools/libraries (shell, coreutils, libc, package manager, etc.). That’s why people say GNU/Linux: the GNU userland + the Linux kernel.
+
+In everyday speech, “Linux” often means a Linux distribution (Ubuntu, Alpine, Fedora), which is the kernel + userland bundled together.
+
+
+so running docker desktop what shell does it use? ubuntu or gnu?
+
+Short answer: Docker Desktop doesn’t use Ubuntu. It runs a minimal Linux VM (LinuxKit). That VM has a tiny userland (BusyBox/Alpine‑style), not a full Ubuntu distro.
+
+Also: GNU isn’t a shell. GNU is the userland tools; shells are things like sh, bash, ash, zsh.
+
+What shell you get depends on the container image you run:
+
+node:20-alpine → /bin/sh (BusyBox/ash)
+node:20 (Debian) → bash + sh
+If you want to confirm inside a container:
+
+docker run --rm -it node:20-alpine sh
+or check OS:
+
+cat /etc/os-release
+
+so gnu is userland 
+
+Yes. GNU refers to the userland: core utilities, libraries (like glibc), shells, and tools that run on top of the kernel. The kernel is Linux; together they form a full OS (often called GNU/Linux).
+
+
+so what does linux/alpine use for its userline
+
+Alpine uses a minimal userland:
+
+musl (C library, instead of glibc)
+BusyBox (core command‑line utilities, instead of full GNU coreutils)
+So it’s not a GNU userland. That’s why Alpine images are tiny and fast.
+
+okay, so its kernal is still linux but changes its userland
+
+Yes. Alpine uses the Linux kernel, but its userland is different (musl + BusyBox instead of GNU).
+
+
+so now to get this full process, we we ran a build this creates a snapshot of animage?
+
+Yes — docker build creates an image, which is a snapshot of a filesystem plus metadata (like the default command, environment variables, etc.). It’s built in layers based on each Dockerfile step.
+
+
+so this image is inserted into docker desktop?
+
+Yes. On macOS, the built image is stored inside Docker Desktop’s Linux VM (its image store). You can see it with:
+
+docker images
+
+so this is a snapshot of what again?
+
+An image is a snapshot of the filesystem plus metadata.
+Filesystem = base OS files (e.g., Alpine) + your app code + installed dependencies.
+Metadata = default command (CMD), environment variables, working directory, etc.
+
+It’s not a snapshot of a running container’s live state.
+
+
+so for this image, docker desktop on build of this image had its os-level-vis of the linux kernal to isolate this image? with its relative cgroups and name
+
+Not quite.
+
+Images are just stored artifacts (files + metadata). They’re not isolated or running, so no namespaces/cgroups are involved yet.
+Isolation happens when you run a container from the image. That’s when Docker creates namespaces/cgroups and a container ID/name.
+So:
+Build → image stored in Docker Desktop
+Run → container created with OS‑level isolation
+
+
+so where do these images live? is it inside the docker desktop storage or techincally our computer main directory storage that we can access 
+
+On macOS, images live inside Docker Desktop’s Linux VM disk image, managed by Docker Desktop. They’re not stored in your project folder, and you don’t normally access them directly.
+
+You can see/manage them with Docker commands:
+
+docker images
+docker image ls
+docker system df
+If you want the exact storage location, check Docker Desktop → Settings → Resources → Advanced → Disk image location. That path points to the VM’s disk file where images/containers are stored.
+
+
+so they place it in a folder inside docker?
+
+Not as a normal folder you browse.
+
+On macOS, Docker Desktop stores images inside its Linux VM disk image (a single big file like Docker.raw), not inside your project directory.
+
+You can see the location in Docker Desktop → Settings → Resources → Advanced → Disk image location.
+A typical path looks like:
+
+~/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw
+So the images live inside that VM disk, and you manage them with Docker commands (docker images, docker rmi), not by browsing files.
+
+
+so im assuming, that the more images we create the more storage docker takes
+
+Yes. More images (and containers/volumes) consume more disk space in Docker Desktop’s VM. Layers are shared across images, so duplicates don’t always add full size, but space still grows.
+
+You can check usage with:
+
+docker system df
+And clean up with:
+
+docker image prune
+docker system prune
+(Use with care — they delete unused images/containers.)
+
+well what im saying is i know for storage units windows at least anmes them c: or f: or whatever but this is on the same drive but theres a algorithm that checks the disk range to see if its in the proper area to create a file or donwload something at c:
+
+On Windows, C: is a volume (a filesystem on a partition). Directories like C:\Users\... are just paths inside that same volume — they’re not separate disk regions.
+
+macOS is similar (just no drive letters). A directory like ~/Desktop is not its own disk area; it’s just a folder inside one filesystem. The OS allocates disk blocks anywhere it needs — it doesn’t reserve a “range” for each folder.
+
+Docker Desktop’s Docker.raw is just one big file on your normal macOS filesystem. The OS treats it like any other file and stores its blocks wherever there’s space on disk. Inside that file is a Linux filesystem that Docker manages.
+
+So:
+
+C: / macOS volume = the real disk filesystem
+Folders = just paths
+Docker.raw = one file on that filesystem (not a partition)
+
+so what filesystem partition am i on for mac
+
+
+Worked for 17s
+On your Mac right now, the root filesystem (/) is:
+
+Filesystem: /dev/disk3s1s1
+Size: 460Gi, Used: 11Gi, Avail: 172Gi
+(from df -h /)
+That device is typically an APFS system volume. macOS usually has an APFS container with separate System and Data volumes (e.g., “Macintosh HD” and “Macintosh HD – Data”).
+
+I tried diskutil info / here, but it’s blocked in this environment. You can run it in your own Terminal to see the exact APFS volume name:
+
+diskutil info /
+diskutil list
+That will show the container/volume details.
+
+
+so im on disk3
+
+Yes — your root filesystem is on /dev/disk3s1s1, which is a logical APFS volume inside the APFS container on disk3. So “disk3” is the underlying device, and s1s1 refers to a specific APFS volume on it.
+
+
+so desktop docker is in this disk3 and all of its images just live inside the desktop docker file 
+
+Yes — by default Docker Desktop stores its data (images/containers/volumes) inside a VM disk image file (e.g., Docker.raw) on your Mac’s main disk (disk3). All images live inside that VM disk file unless you change the location in Docker Desktop settings.
+
+
+so the image file is just the desktop docker appliation
+
+Not quite. The Docker Desktop app is the application you installed.
+The image file (e.g., Docker.raw) is data that Docker Desktop uses to store images/containers. They’re related, but the image file isn’t the app itself.
+
+
+well then where does it store this images at?
+
+
+Worked for 11s
+Your Docker images live inside Docker Desktop’s VM disk image file:
+
+~/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw
+That single file (Docker.raw) holds all images/containers/volumes. You manage it via Docker commands (docker images, docker system df), not by browsing inside it.
+
+
+co.jialeisun.vpnmaster.tunnel-trojan
+i found this going into my containers, is this ad
+
+Short answer: that string looks like a macOS app bundle identifier, not a Docker container. It’s likely from a VPN app (“VPN Master”) and “tunnel‑trojan” probably refers to the Trojan proxy protocol, not malware. It’s not an ad by itself.
+
+But you should verify:
+
+1. Where did you see it?
+
+If it’s under ~/Library/Containers/, that’s macOS sandbox app data (not Docker).
+If it’s in Docker Desktop, that’s different — tell me the exact path or screenshot.
+2. Check if the app is installed
+
+mdfind "kMDItemCFBundleIdentifier == 'co.jialeisun.vpnmaster.tunnel-trojan'"
+Or:
+
+ls /Applications | grep -i vpn
+3. Check VPN/Network extensions
+System Settings → Network → VPN
+System Settings → General → Login Items & Extensions → Network Extensions
+
+If you don’t recognize it, uninstall the app and remove its container data.
+
+If you tell me the exact location you saw it (path or Docker list), I can be more precise.
+
+
+wuzi@Daniels-Laptop Containers % cd com.docker.docker/Data 
+wuzi@Daniels-Laptop Data % ls
+backend.sock			filesystem-volume.sock
+cagent				forkexecd.sock
+container-filesystem.sock	httpproxy.sock
+control-init.sock		image-inspector.sock
+debug-socketforwarder.sock	inference.sock
+diagnosticd.sock		locked-directories
+dns-forwarder.sock		log
+docker-api-proxy-control.sock	modules-manager.sock
+docker-cagent.sock		mutagen-conduit.sock
+docker-cli.sock			perf-socketforwarder.sock
+docker-desktop-build.sock	stats.sock
+docker.raw.sock			tasks
+ethernet-fd.sock		tools.sock
+ethernet-qemu.sock		transfused.sock
+ethernet-vfkit.sock		virtualization.sock
+ethernet-vpnkit.sock		vms
+extension-manager.sock		volume-contents.sock
+extensions			vpnkit-bridge-fd.sock
+filesystem-event.sock		webgpu.sock
+filesystem-fd.sock
+wuzi@Daniels-Laptop Data % 
+
+so this is where it downlaods the iamges?
+
+Not exactly.
+The images are stored inside the VM disk image file:
+
+~/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw
+Everything you saw in .../Data/ are Docker Desktop’s internal sockets/services. The actual images and containers live inside Docker.raw, which is a single large disk image file managed by Docker Desktop.
+
+
+where is docker.raw at
+
+Here:
+
+~/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw
+You can confirm with:
+
+ls -la ~/Library/Containers/com.docker.docker/Data/vms/0/data/
+Docker Desktop → Settings → Resources → Advanced also shows the disk image location.
+
+
+okay i see it
+
+Great — then you’ve found the VM disk image file. That’s where Docker Desktop stores images/containers.
+
+If you want to see how much space Docker is using:
+
+docker system df
+Anything else you want to verify?
+
+
+so desktop docker lives in applicatiosn so what the heck is in library/containers ?? is this what makes desktop docker work?
+
+Yes. On macOS:
+
+/Applications/Docker.app = the actual Docker Desktop application (the GUI + launcher).
+~/Library/Containers/com.docker.docker/ = the app’s sandboxed data folder.
+That folder contains:
+
+The Linux VM disk image (Docker.raw) where images/containers live
+Docker settings, logs, sockets, internal services
+So yes — ~/Library/Containers/com.docker.docker/ is what makes Docker Desktop work behind the scenes. If you delete it, Docker Desktop will reset to a clean state and you’ll lose all images/containers.
+
+
+so my os containerized the application?
+
+Yes. macOS sandboxes apps.
+~/Library/Containers/com.docker.docker/ is Docker Desktop’s sandbox container, where macOS stores the app’s data and internal files. This is separate from Docker “containers,” but it’s the macOS app‑sandboxing system.
+
+
+so this creates the desktop docker own environment meaning it has no sense on the outside directories?
+
+Mostly yes — macOS sandboxing gives Docker Desktop its own app container under ~/Library/Containers/com.docker.docker/, and by default it can’t access arbitrary files on your Mac.
+
+However, it can access outside directories if:
+
+You grant permissions (macOS prompts)
+You add shared folders in Docker Desktop settings
+You mount a host path into a container (-v /path:/container/path)
+So it’s isolated by default, but it can access specific host paths you explicitly allow.
+
+
+so what makes it different from a regualr desktop folder or documents folder
+
+A regular folder like ~/Documents is just part of your user’s filesystem — any app you run can read/write it if it has permission.
+
+~/Library/Containers/com.docker.docker/ is special because macOS sandboxes apps:
+
+The OS automatically redirects the app’s writes to its own container folder.
+The app cannot read/write arbitrary locations unless you grant access.
+It’s managed by macOS, not just a normal folder you chose.
+So the container folder is an OS‑enforced private area for that app, not just a regular directory.
+
+so it lives in docer.raw?
+
+Yes — the VM’s disk data lives in Docker.raw.
+The VM itself is a running process managed by Docker Desktop, and it uses Docker.raw as its virtual disk.
+
+
+but it also stores images in docker.raw
+
+Yes. All images, containers, and volumes are stored inside Docker.raw, because that file is the VM’s disk. Docker Desktop manages it for you.
+
+
+so the flow goes like how again
+
+Here’s the flow, end‑to‑end, on macOS:
+
+Docker Desktop app starts
+
+Launches a lightweight Linux VM.
+Docker daemon runs inside that VM
+
+It’s the server that builds images and runs containers.
+You run docker build
+
+The daemon builds an image (filesystem snapshot + metadata).
+The image is stored inside the VM disk file Docker.raw.
+You run docker run
+
+The daemon creates a container from the image.
+The container runs as an isolated Linux process (namespaces + cgroups) inside the VM.
+Isolation
+
+Containers are isolated from each other by default.
+They only share data if you mount volumes or connect networks.
+So the key pieces are:
+Docker Desktop → Linux VM → Docker daemon → Images/Containers in Docker.raw
+
+
+im talking about doing docker build it stores that image on the container the mac built for the docker application which is then stores into dockers vm/raw.data. 
+
+Yes — that’s essentially correct, just phrased a bit differently:
+
+docker build sends your build context to the Docker daemon.
+The daemon runs inside Docker Desktop’s Linux VM.
+The built image is stored inside the VM’s disk file (Docker.raw), which itself lives in Docker Desktop’s macOS app sandbox (~/Library/Containers/com.docker.docker/...).
+So:
+macOS app container → Docker Desktop VM → Docker.raw → images inside it.
+
+
+soooo docker build sends the Dockerfile instructions to docker daemon? which docker daemon handles which then stores it on docker.raw
+
+Yes. That’s the right chain:
+
+docker build (CLI) sends your Dockerfile + build context to the Docker daemon.
+The daemon executes the build inside the Linux VM.
+The resulting image layers are stored in the VM’s disk image (Docker.raw).
+
+docker build sends the Dockerfile instructions to docker daemon? which docker daemon handles which then stores it on docker.raw, now when i do docker run "app name" this command is ineptreted by docker which is then sent to the daemon?  
+
+Yes.
+
+docker build and docker run are CLI commands.
+The CLI sends those requests over the Docker API to the Docker daemon (server).
+On macOS, that daemon runs inside Docker Desktop’s Linux VM.
+The daemon builds images (stored in Docker.raw) and runs containers from them.
+So the flow is:
+
+CLI → Docker daemon (in VM) → build/run → images/containers stored in Docker.raw
+
+
+docker build sends the Dockerfile instructions to docker daemon? which docker daemon handles which then stores it on docker.raw, now when i do docker run "app name" this command is ineptreted by docker which is then sent to the daemon. this boots up dockers light weight vm to then read the image create a userland of alpine that downloads node environment and also installs the json files as well as copying everyhting that is not in the dockerignore. then lastly it runs an instance or a container by running the command?
+
+Almost — a couple key fixes:
+
+docker build
+
+CLI sends Dockerfile + build context to the Docker daemon.
+The daemon executes the Dockerfile.
+It pulls node:20-alpine if missing, runs npm ci, copies files, etc.
+The resulting image is stored in Docker.raw.
+docker run my-app
+
+CLI sends the run request to the daemon.
+The daemon creates a container from the already-built image.
+It does not re-run npm ci or re-copy files; that already happened during build.
+It runs the image’s default command (CMD) or whatever you override.
+VM boot
+
+The Linux VM is started by Docker Desktop when Docker Desktop launches.
+docker run uses the already-running VM (it doesn’t boot a fresh VM per run).
+So the corrected flow is:
+
+build: Dockerfile → daemon builds image (pull base image, npm ci, copy files) → image stored in Docker.raw
+run: daemon starts a container from that image → executes CMD (or override)
+
+so inside the container form macos in vm is that where the linux like os-level vis happens, it takes the image and maps to a isolated space?
+
+Yes. The OS‑level isolation happens inside the Linux VM. The Docker daemon takes the image’s filesystem and starts a container as an isolated Linux process using:
+
+Namespaces (separate process tree, network, filesystem view, etc.)
+cgroups (resource limits)
+So the image is mapped into the container’s filesystem (via layered/overlay FS), and the container runs in its own isolated space inside the VM. On macOS, your host just sees the VM process, not the container internals.
+
+
+
+
