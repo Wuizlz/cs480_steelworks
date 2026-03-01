@@ -1,6 +1,8 @@
 .DS_Store
+
+node_modules
+
 .env
-node_modules/
-dist/
-frontend/dist
-frontend/.vite
+
+coverage/
+frontend/dist/
