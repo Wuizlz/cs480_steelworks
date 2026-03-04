@@ -17,11 +17,5 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Prettier (check)
-        run: npx prettier . --check
-      - name: ESLint
-        run: npx eslint . --ext .ts,.tsx
-      - name: TypeScript (noEmit)
-        run: npx tsc --noEmit
-      - name: Jest coverage
-        run: npx jest --coverage
+      - name: Pre-commit checks
+        run: npm run precommit:check

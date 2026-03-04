@@ -12,6 +12,7 @@
     "build:ui": "vite build --config frontend/vite.config.ts",
     "preview:ui": "vite preview --config frontend/vite.config.ts",
     "start": "node dist/index.js",
+    "precommit:check": "prettier . --check && eslint . --ext .ts,.tsx && tsc --noEmit && jest --coverage",
     "test": "jest --runInBand",
     "prepare": "husky"
   },
