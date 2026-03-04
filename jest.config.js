@@ -1,9 +1,10 @@
 /** @type {import('jest').Config} */
 module.exports = {
   testEnvironment: "node",
-  testMatch: ["**/__tests__/**/*.test.ts"],
+  testMatch: ["<rootDir>/tests/**/*.test.ts"],
   moduleFileExtensions: ["ts", "js", "json"],
-  roots: ["<rootDir>/src"],
+  roots: ["<rootDir>/src", "<rootDir>/tests"],
+  testPathIgnorePatterns: ["/node_modules/", "/dist/"],
   transform: {
     "^.+\\.tsx?$": ["<rootDir>/jest.transform.cjs", {}],
   },

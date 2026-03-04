@@ -62,6 +62,15 @@ The job `/jobs/process-logs` performs the rules in the acceptance criteria.
 
 Run tests with `npm test`.
 
+## Docker (Intro)
+
+This repo can be run in Docker as a simple test runner.
+
+```bash
+docker build -t markdown-demo .
+docker run --rm markdown-demo
+```
+
 ## Formatter, Linter, Type Check, Coverage (TSX Equivalents)
 
 For this TypeScript/TSX project, the equivalents to Python tooling (ruff, mypy, pytest-cov) are:
