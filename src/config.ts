@@ -6,7 +6,7 @@
  */
 
 import dotenv from "dotenv";
-import { z } from "zod";
+import { z } from "zod/v3";
 
 // Load environment variables from .env into process.env.
 dotenv.config();
