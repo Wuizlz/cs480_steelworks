@@ -1,1 +1,2 @@
+npm run license:check
 npm run precommit:check
