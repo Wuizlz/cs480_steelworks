@@ -88,6 +88,33 @@ npm run precommit:check
 npm run license:check
 ```
 
+## Playwright E2E (UI + API)
+
+Start the API and UI in separate terminals:
+
+```bash
+npm run dev
+npm run dev:ui
+```
+
+Run E2E tests (headless, default):
+
+```bash
+npx playwright test e2e
+```
+
+Run E2E tests in headed mode:
+
+```bash
+npx playwright test e2e --headed
+```
+
+Run E2E tests in headed mode with slow motion:
+
+```bash
+PW_SLOWMO=3000 npx playwright test e2e --headed
+```
+
 ### Acceptance Criteria Coverage
 
 | AC   | Covered By Test                                                                              |
