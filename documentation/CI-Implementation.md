@@ -1,121 +1,128 @@
 # CI Implementation (GitHub Actions + Husky)
 
-This document records how we implemented CI and pre-commit checks for this repo, and how we consolidated changes so `main` has the complete working app and CI going forward.
+This document describes our local pre-commit workflow, the GitHub Actions CI pipeline, and the security configuration that should be enabled in GitHub.
 
-## Goals
+## Overview
 
-- Add GitHub Actions CI to run on pull requests.
-- Add local pre-commit checks so formatting and linting are enforced before commits.
-- Keep the full working backend + frontend in `main` (not just the CI changes).
+We use a single source of truth for checks:
 
-## What We Added
+- Local pre-commit hook runs `npm run license:check` and `npm run precommit:check`.
+- CI runs `npm run precommit:check` on pull requests.
 
-### 1. GitHub Actions workflow
+This keeps local and CI behavior aligned and prevents surprises at review time.
 
-We added a workflow at:
+## Local Pre-Commit Workflow (Husky)
+
+### Where it lives
+
+- Hook file: `.husky/pre-commit`
+- Script definitions: `package.json` (under `scripts`)
+
+### What the hook runs
+
+The hook executes these commands in order:
+
+1. `npm run license:check`
+2. `npm run precommit:check`
+
+If any command exits with a non-zero status, the commit is blocked.
+
+### What each script means
+
+#### `license:check`
+
+Command:
+
+```
+license-checker --production --summary | grep -Ei 'gpl|agpl|lgpl' && (echo "Copyleft license detected" && exit 1) || exit 0
+```
+
+Behavior:
+
+1. `license-checker --production --summary` lists licenses for production dependencies only.
+2. `grep -Ei 'gpl|agpl|lgpl'` searches for copyleft licenses.
+3. If a match is found, it prints an error and exits with code 1.
+4. If no match is found, it exits with code 0.
+
+This blocks commits when GPL/AGPL/LGPL dependencies are present in runtime deps.
+
+#### `precommit:check`
+
+Command:
+
+```
+prettier . --check && eslint . --ext .ts,.tsx && tsc --noEmit && jest --coverage
+```
+
+Behavior:
+
+1. **Prettier** verifies formatting.
+2. **ESLint** checks lint rules for TypeScript files.
+3. **TypeScript** runs a no-emit type check.
+4. **Jest** runs unit tests and generates coverage.
+
+Any failure stops the commit.
+
+## GitHub Actions (CI)
+
+### Workflow location
 
 - `.github/workflows/ci.yml`
 
-It runs on PR events and executes:
+### When it runs
 
-- `npm ci`
-- `npx prettier . --check`
-- `npx eslint . --ext .ts,.tsx`
-- `npx tsc --noEmit`
-- `npx jest --coverage`
+- On pull request events: `opened`, `synchronize`, `reopened`
 
-This ensures formatting, linting, type checks, and tests all run on PRs.
+### What it runs
 
-### 2. Husky + lint-staged
+1. `npm ci`
+2. `npm run precommit:check`
 
-We added Husky to run checks locally on commit, and lint-staged to run only on staged files:
+This ensures the same checks that run locally also run in CI.
 
-- `.husky/pre-commit`
+## GitHub Security Configuration
 
-The hook runs:
+Enable these features in GitHub to keep dependencies and code scanning up to date.
 
-- `npx lint-staged`
+### Dependabot
 
-The `lint-staged` config in `package.json` runs:
+1. GitHub → **Security** → **Dependabot**: enable it.
+2. GitHub → **Settings** → **Advanced Security**: enable all of the following:
+   - Dependabot alerts
+   - Dependabot security updates
+   - Grouped security updates
 
-- ESLint + Prettier on staged `*.ts` and `*.tsx`
-- Prettier on staged `*.js`, `*.jsx`, `*.json`, and `*.md`
+GitHub maintains an advisory database with the latest vulnerabilities and fixes. When it detects that a dependency version in this repo has a known vulnerability, it creates alerts (and optionally automated update PRs).
 
-This keeps local commits clean and prevents pushing obvious formatting/lint issues.
+### Common vulnerabilities to watch for
 
-### 3. ESLint config
+- SQL Injection
+- Path Traversal
+- Insecure File Handling (for example, accepting a 100GB file upload)
 
-We added ESLint configuration at:
+### Code Scanning (CodeQL)
 
-- `eslint.config.cjs`
+1. GitHub → **Security** → **Enable code scanning**
+2. GitHub → **Settings** → **Advanced Security** → **Code Scanning**
+3. For CodeQL analysis, choose the **default setup**.
 
-This sets up TypeScript parsing and rules for TS/TSX files, and ignores `node_modules` and `dist`.
+## How to Verify
 
-### 4. Dependency updates
-
-We installed these dev dependencies to support the tooling:
-
-- `husky`
-- `lint-staged`
-- `prettier`
-- `eslint`
-- `@typescript-eslint/parser`
-- `@typescript-eslint/eslint-plugin`
-
-These live in `package.json` and are captured in `package-lock.json`.
-
-## Why We Avoided a Full Merge Initially
-
-We had a branch (`feature-workflow`) that only contained CI-related changes and did not include the full app (frontend + backend). A full merge would have deleted or overridden working code in `prototype`.
-
-Instead, we selectively applied the CI-related files and merged only the required config into `package.json`.
-
-## Issues We Hit (and Fixes)
-
-### 1. Prettier failures on generated files
-
-Coverage output was being staged, and Prettier flagged it. We fixed this by ignoring `coverage/` in `.gitignore`.
-
-### 2. ESLint warnings on non-TS files
-
-ESLint was being run on JSON files and produced warnings. We narrowed the lint-staged rule so ESLint only runs on `*.ts` and `*.tsx`.
-
-### 3. ESLint warnings in build output
-
-ESLint picked up `dist/`. We ignored `dist/` in the ESLint config and `.gitignore`.
-
-### 4. Prettier formatting on merge
-
-Before the merge commit, Prettier blocked the commit because several files were not formatted. We ran:
+Local verification:
 
 ```
-prettier --write
+npm run license:check
+npm run precommit:check
 ```
 
-on the files listed by the error, then re-attempted the commit.
+CI verification:
 
-## Final Merge Strategy
-
-We decided to make `main` the complete, working branch (frontend + backend + CI). The final approach was:
-
-1. Ensure `prototype` was clean and passing tests.
-2. Merge `prototype` into `main` so the full working app lives in `main`.
-3. Keep CI and Husky in `main` so all future PRs into `main` trigger GitHub Actions.
-
-## How to Verify CI
-
-- Open a PR targeting `main`.
-- Check the PR "Checks" tab or the repository "Actions" tab.
-- You should see the `CI` workflow run and report status.
+1. Open a pull request.
+2. Check the PR “Checks” tab or the repository “Actions” tab for the CI workflow result.
 
 ## Key Files
 
 - `.github/workflows/ci.yml` (CI workflow)
 - `.husky/pre-commit` (local pre-commit hook)
+- `package.json` (scripts)
 - `eslint.config.cjs` (ESLint config)
-- `package.json` (scripts, lint-staged config, devDependencies)
-
-## Notes for Future Work
-
-- If CI should run on push (not just PR), add a `push` trigger in `ci.yml`.
-- If you want faster local commits, keep pre-commit limited to lint/format and let CI run full tests.
