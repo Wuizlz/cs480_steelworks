@@ -7,6 +7,19 @@ on:
 jobs:
   precommit-checks:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+          POSTGRES_DB: ops_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -17,5 +30,21 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Seed database
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          PGPASSWORD=${{ secrets.CI_POSTGRES_PASSWORD }} psql -h localhost -U postgres -d ops_test -f db/schema.sql
+          PGPASSWORD=${{ secrets.CI_POSTGRES_PASSWORD }} psql -h localhost -U postgres -d ops_test -f db/seed.sql
       - name: Pre-commit checks
         run: npm run precommit:check
+      - name: E2E tests
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGDATABASE: ops_test
+          PGUSER: postgres
+          PGPASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+        run: npx playwright test e2e
