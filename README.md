@@ -79,14 +79,13 @@ For this TypeScript/TSX project, the equivalents to Python tooling (ruff, mypy, 
 - Linter: ESLint
 - Type checker: TypeScript (`tsc`)
 - Coverage: Jest (`--coverage`)
+- License check: `license-checker` (blocks GPL/AGPL/LGPL in runtime deps)
 
 Run the checks with:
 
 ```bash
-npx prettier . --write
-npx eslint . --ext .ts,.tsx
-npx tsc --noEmit
-npx jest --coverage
+npm run precommit:check
+npm run license:check
 ```
 
 ### Acceptance Criteria Coverage
