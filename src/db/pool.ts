@@ -7,9 +7,6 @@
 
 import { Pool, PoolClient } from "pg";
 import { config } from "../config";
-import { getLogger, toErrorMeta } from "../logging/logger";
-
-const logger = getLogger("db.pool");
 
 /**
  * Create a new pg Pool instance using validated configuration.
@@ -19,7 +16,7 @@ const logger = getLogger("db.pool");
  */
 export function createPool(): Pool {
   // The Pool manages client connections internally.
-  const pool = new Pool({
+  return new Pool({
     host: config.pg.host,
     port: config.pg.port,
     database: config.pg.database,
@@ -29,18 +26,6 @@ export function createPool(): Pool {
       ? { rejectUnauthorized: config.pg.ssl.rejectUnauthorized }
       : undefined,
   });
-
-  pool.on("error", (error) => {
-    logger.error("Unexpected PostgreSQL pool error", toErrorMeta(error));
-  });
-
-  logger.info("PostgreSQL pool created", {
-    host: config.pg.host,
-    database: config.pg.database,
-    ssl_enabled: config.pg.ssl.enabled,
-  });
-
-  return pool;
 }
 
 /**

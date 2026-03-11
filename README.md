@@ -62,33 +62,14 @@ The job `/jobs/process-logs` performs the rules in the acceptance criteria.
 
 Run tests with `npm test`.
 
-## Docker
+## Docker (Intro)
 
-The Dockerfile now builds a production image for the full app:
-
-- compiles the TypeScript API into `dist/`
-- builds the React UI into `frontend/dist/`
-- serves the built UI from the Express server on port `3000`
-
-Build the image:
+This repo can be run in Docker as a simple test runner.
 
 ```bash
-docker build \
-  --build-arg VITE_SENTRY_DSN="$VITE_SENTRY_DSN" \
-  -t markdown-demo .
+docker build -t markdown-demo .
+docker run --rm markdown-demo
 ```
-
-Run the container with your backend environment variables:
-
-```bash
-docker run --rm -p 3000:3000 --env-file .env markdown-demo
-```
-
-Important:
-
-- backend env vars such as `PGHOST`, `PGUSER`, `PGPASSWORD`, `SENTRY_DSN`, and `PORT` are read at container runtime
-- `VITE_SENTRY_DSN` is a frontend Vite variable, so it must be provided at image build time with `--build-arg`
-- if you change `VITE_SENTRY_DSN`, rebuild the image so the new value is baked into the frontend bundle
 
 ## Formatter, Linter, Type Check, Coverage (TSX Equivalents)
 
@@ -155,7 +136,6 @@ PW_SLOWMO=3000 npx playwright test e2e --headed
 
 Required environment variables:
 
-- `NODE_ENV` (`development`, `test`, or `production`)
 - `PGHOST`
 - `PGPORT`
 - `PGDATABASE`
@@ -164,12 +144,6 @@ Required environment variables:
 - `PGSSL` (set `true` if your provider requires SSL/TLS)
 - `PGSSLREJECTUNAUTHORIZED` (set `false` for providers like Render that use self-signed certs)
 - `PORT` (optional, default 3000)
-- `LOG_LEVEL` (optional, defaults to `debug` in development and `info` in production)
-- `LOG_CONSOLE_LEVEL` (optional, defaults to `debug` in development and `warn` in production)
-- `LOG_DIR` (optional, default `logs`)
-- `LOG_FILE_NAME` (optional, default `app.log`)
-- `SENTRY_DSN` (optional, backend Sentry DSN for the Express API)
-- `VITE_SENTRY_DSN` (optional, frontend Sentry DSN exposed to the React app by Vite)
 
 ## Notes on Extensibility
 

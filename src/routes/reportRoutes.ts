@@ -6,7 +6,6 @@
 
 import { Router, Request, Response } from "express";
 import { Pool } from "pg";
-import { getLogger } from "../logging/logger";
 import {
   getFlagCounts,
   getWeeklyDetails,
@@ -14,8 +13,6 @@ import {
 } from "../services/reportService";
 import { asyncHandler } from "../utils/asyncHandler";
 import { defaultWeekRangeUTC, parseIsoDateUTC } from "../utils/date";
-
-const logger = getLogger("routes.report");
 
 /**
  * Build a router with report endpoints bound to a database pool.
@@ -44,10 +41,6 @@ export function createReportRouter(pool: Pool): Router {
 
       // Validate date formats before hitting the database.
       if (!parseIsoDateUTC(rangeStart) || !parseIsoDateUTC(rangeEnd)) {
-        logger.warn("Rejected weekly summary request with invalid date range", {
-          start_week: rangeStart,
-          end_week: rangeEnd,
-        });
         res
           .status(400)
           .json({ error: "start_week and end_week must be YYYY-MM-DD" });
@@ -81,11 +74,6 @@ export function createReportRouter(pool: Pool): Router {
 
       // Validate required params.
       if (!weekStart || !lineName || !defectType) {
-        logger.warn("Rejected weekly details request with missing filters", {
-          week_start: weekStart,
-          line_name: lineName,
-          defect_type: defectType,
-        });
         res.status(400).json({
           error: "week_start, line_name, and defect_type are required",
         });
@@ -93,9 +81,6 @@ export function createReportRouter(pool: Pool): Router {
       }
 
       if (!parseIsoDateUTC(weekStart)) {
-        logger.warn("Rejected weekly details request with invalid week_start", {
-          week_start: weekStart,
-        });
         res.status(400).json({ error: "week_start must be YYYY-MM-DD" });
         return;
       }
@@ -134,10 +119,6 @@ export function createReportRouter(pool: Pool): Router {
 
       // Validate date formats before hitting the database.
       if (!parseIsoDateUTC(rangeStart) || !parseIsoDateUTC(rangeEnd)) {
-        logger.warn("Rejected flag counts request with invalid date range", {
-          start_week: rangeStart,
-          end_week: rangeEnd,
-        });
         res
           .status(400)
           .json({ error: "start_week and end_week must be YYYY-MM-DD" });

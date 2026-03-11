@@ -21,13 +21,11 @@ import {
   UPDATE_SHIP_LOG_LOT_SQL,
   UPSERT_ISSUE_TYPE_SQL,
 } from "../db/queries";
-import { getLogger, toErrorMeta } from "../logging/logger";
 import { ProcessResult } from "../types";
 import { getWeekStartUTC, parseIsoDateUTC, toIsoDateUTC } from "../utils/date";
 
 // Batch size default keeps per-transaction work bounded.
 const DEFAULT_BATCH_SIZE = 500;
-const logger = getLogger("service.ingest");
 
 /**
  * Normalize a DATE value from pg into a YYYY-MM-DD string.
@@ -75,16 +73,6 @@ async function insertFlag(
     params.shippingLogKey ?? null,
     null,
   ]);
-
-  logger.warn("Data quality flag recorded", {
-    flag_type: params.flagType,
-    source: params.source,
-    reason: params.reason,
-    missing_fields: params.missingFields ?? undefined,
-    lot_id_norm: params.lotIdNorm ?? undefined,
-    production_log_key: params.productionLogKey ?? undefined,
-    shipping_log_key: params.shippingLogKey ?? undefined,
-  });
 }
 
 /**
@@ -249,11 +237,6 @@ export async function processProductionLogs(
 ): Promise<ProcessResult> {
   let processed = 0;
   let flagged = 0;
-  let fetched = 0;
-
-  logger.info("Production log processing started", {
-    batch_size: batchSize,
-  });
 
   // Use a dedicated client so all operations share a transaction.
   const client = await pool.connect();
@@ -265,7 +248,6 @@ export async function processProductionLogs(
     const rowsResult = await client.query(UNPROCESSED_PRODUCTION_LOGS_SQL, [
       batchSize,
     ]);
-    fetched = rowsResult.rows.length;
 
     for (const row of rowsResult.rows) {
       // Required fields: run_date, production_line_key, primary_issue, lot_id.
@@ -415,22 +397,9 @@ export async function processProductionLogs(
     }
 
     await client.query("COMMIT");
-    logger.info("Production log processing completed", {
-      batch_size: batchSize,
-      fetched,
-      processed,
-      flagged,
-    });
   } catch (error) {
     // Roll back the transaction to keep the DB consistent on failure.
     await client.query("ROLLBACK");
-    logger.error("Production log processing failed", {
-      batch_size: batchSize,
-      fetched,
-      processed,
-      flagged,
-      ...toErrorMeta(error),
-    });
     throw error;
   } finally {
     // Always release the client to avoid pool leaks.
@@ -452,11 +421,6 @@ export async function processShippingLogs(
 ): Promise<ProcessResult> {
   let processed = 0;
   let flagged = 0;
-  let fetched = 0;
-
-  logger.info("Shipping log processing started", {
-    batch_size: batchSize,
-  });
 
   // Use a dedicated client for transactional consistency.
   const client = await pool.connect();
@@ -468,7 +432,6 @@ export async function processShippingLogs(
     const rowsResult = await client.query(UNPROCESSED_SHIPPING_LOGS_SQL, [
       batchSize,
     ]);
-    fetched = rowsResult.rows.length;
 
     for (const row of rowsResult.rows) {
       // Required field: ship_date.
@@ -607,22 +570,9 @@ export async function processShippingLogs(
     }
 
     await client.query("COMMIT");
-    logger.info("Shipping log processing completed", {
-      batch_size: batchSize,
-      fetched,
-      processed,
-      flagged,
-    });
   } catch (error) {
     // Roll back the transaction to keep the DB consistent.
     await client.query("ROLLBACK");
-    logger.error("Shipping log processing failed", {
-      batch_size: batchSize,
-      fetched,
-      processed,
-      flagged,
-      ...toErrorMeta(error),
-    });
     throw error;
   } finally {
     // Release the client to avoid connection leaks.
@@ -642,21 +592,9 @@ export async function processAllLogs(
   pool: Pool,
   batchSize = DEFAULT_BATCH_SIZE,
 ): Promise<{ production: ProcessResult; shipping: ProcessResult }> {
-  logger.info("Combined log processing requested", {
-    batch_size: batchSize,
-  });
-
   // Run production and shipping processing sequentially to reduce lock contention.
   const production = await processProductionLogs(pool, batchSize);
   const shipping = await processShippingLogs(pool, batchSize);
-
-  logger.info("Combined log processing completed", {
-    batch_size: batchSize,
-    production_processed: production.processed,
-    production_flagged: production.flagged,
-    shipping_processed: shipping.processed,
-    shipping_flagged: shipping.flagged,
-  });
 
   return { production, shipping };
 }

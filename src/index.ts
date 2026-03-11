@@ -5,31 +5,9 @@
  * database resources cleanly.
  */
 
-import "./sentry";
 import { createApp } from "./app";
 import { config } from "./config";
 import { createPool } from "./db/pool";
-import { configureLogger, getLogger, toErrorMeta } from "./logging/logger";
-
-configureLogger({
-  environment: config.environment,
-  level: config.logging.level,
-  consoleLevel: config.logging.consoleLevel,
-  logDir: config.logging.logDir,
-  fileName: config.logging.fileName,
-  maxBytes: config.logging.maxBytes,
-  maxFiles: config.logging.maxFiles,
-  enableFileLogging: config.logging.enableFileLogging,
-});
-
-const logger = getLogger("index");
-logger.info("Application startup", {
-  environment: config.environment,
-  port: config.port,
-  log_dir: config.logging.logDir,
-  log_file: config.logging.fileName,
-  sentry_enabled: Boolean(config.sentry.dsn),
-});
 
 // Create the database pool shared across requests.
 const pool = createPool();
@@ -39,7 +17,7 @@ const app = createApp(pool);
 
 // Start listening for HTTP requests.
 const server = app.listen(config.port, () => {
-  logger.info("HTTP server listening", { port: config.port });
+  console.log(`Server listening on port ${config.port}`);
 });
 
 /**
@@ -49,35 +27,16 @@ const server = app.listen(config.port, () => {
  * Space complexity: O(1).
  */
 async function shutdown(signal: string): Promise<void> {
-  logger.info("Received shutdown signal", { signal });
+  console.log(`Received ${signal}. Shutting down...`);
 
   // Stop accepting new connections.
   server.close(async () => {
     // Close the database pool to release TCP connections.
-    try {
-      await pool.end();
-      logger.info("Shutdown complete", { signal });
-      process.exit(0);
-    } catch (error) {
-      logger.error("Failed to close database pool during shutdown", {
-        signal,
-        ...toErrorMeta(error),
-      });
-      process.exit(1);
-    }
+    await pool.end();
+    process.exit(0);
   });
 }
 
 // Handle termination signals for clean shutdown.
 process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
-
-process.on("uncaughtException", (error) => {
-  logger.error("Uncaught exception", toErrorMeta(error));
-});
-
-process.on("unhandledRejection", (reason) => {
-  logger.error("Unhandled promise rejection", {
-    reason: reason instanceof Error ? toErrorMeta(reason) : String(reason),
-  });
-});

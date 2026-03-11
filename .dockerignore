@@ -1,14 +1,8 @@
 .DS_Store
 .env
-.env.*
 .git
 .gitignore
 coverage
-dist
-frontend/dist
-logs
 node_modules
 npm-debug.log
 *.log
-playwright-report
-test-results
