@@ -152,7 +152,6 @@ Required environment variables:
 - `SENTRY_DSN` (optional, backend Sentry DSN for the Express API)
 - `VITE_SENTRY_DSN` (optional, frontend Sentry DSN exposed to the React app by Vite)
 
-
 ## Notes on Extensibility
 
 - If you want explicit defect quantities, add a `qty_defects` column to the source logs and map it to `fact_issue_event.qty_impacted` in `src/services/ingestService.ts`.
