@@ -1,4 +1,4 @@
-# Playwright E2E Testing
+# End-to-End Testing with Playwright
 
 This document explains how Playwright is installed, how it is configured in this repo, how the E2E tests run, and how CI executes them.
 

@@ -1,4 +1,4 @@
-# Frontend Notes (Ops Weekly Defect Reporting)
+# Frontend Architecture and Tooling
 
 These notes describe everything inside `frontend/` and capture the questions you asked while learning the code.
 
@@ -51,6 +51,48 @@ These notes describe everything inside `frontend/` and capture the questions you
 - Uses `Space Grotesk` for body copy and `Fraunces` for headings.
 - Defines CSS variables for the palette and consistent UI spacing.
 - Adds card styling, forms, tables, and responsive tweaks.
+
+## Why Vite Owns Frontend Output
+
+The frontend does not use plain `tsc` as its output step.
+
+Instead:
+
+- `package.json` runs `vite build --config frontend/vite.config.ts` for production frontend builds
+- `frontend/tsconfig.json` uses `noEmit: true`
+- Vite writes the final browser assets into `frontend/dist`
+
+That split exists because the frontend needs more than "convert TypeScript into JavaScript."
+
+Vite handles the full browser-app build pipeline:
+
+- reads `frontend/index.html` as the app entry
+- transforms `.ts` and `.tsx`
+- handles React JSX
+- bundles modules for the browser
+- processes CSS imports
+- injects frontend env values during the build
+- writes production assets like bundled JS and CSS into `frontend/dist`
+
+`frontend/tsconfig.json` still matters, but it is configuration for TypeScript tools, not the thing producing the final frontend bundle.
+
+Its job is to define rules such as:
+
+- strict type checking
+- JSX mode
+- module resolution behavior
+- `noEmit`, which prevents TypeScript from creating sibling `.js` files in `frontend/src`
+
+That is why the frontend stays clean while still producing JavaScript for the browser:
+
+- source stays in `frontend/src`
+- Vite outputs build artifacts to `frontend/dist`
+- no `frontend/src/*.js` files are generated during the normal frontend build
+
+For comparison:
+
+- backend build: `tsc -p tsconfig.json` emits runtime JS into `dist`
+- frontend build: `vite build --config frontend/vite.config.ts` emits bundled assets into `frontend/dist`
 
 ## App.tsx Structure and Data Flow
 

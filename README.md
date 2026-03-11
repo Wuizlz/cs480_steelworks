@@ -89,6 +89,7 @@ Important:
 - backend env vars such as `PGHOST`, `PGUSER`, `PGPASSWORD`, `SENTRY_DSN`, and `PORT` are read at container runtime
 - `VITE_SENTRY_DSN` is a frontend Vite variable, so it must be provided at image build time with `--build-arg`
 - if you change `VITE_SENTRY_DSN`, rebuild the image so the new value is baked into the frontend bundle
+- build output details are documented in `documentation/build/BuildArtifactsAndOutputPaths.md`
 
 ## Formatter, Linter, Type Check, Coverage (TSX Equivalents)
 

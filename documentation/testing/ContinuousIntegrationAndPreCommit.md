@@ -1,4 +1,4 @@
-# CI Implementation (GitHub Actions + Husky)
+# Continuous Integration and Pre-Commit Checks
 
 This document describes our local pre-commit workflow, the GitHub Actions CI pipeline, and the security configuration that should be enabled in GitHub.
 

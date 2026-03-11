@@ -1,4 +1,4 @@
-# Testing Guide
+# Backend Testing Guide
 
 This document explains the testing side of the application, how `npm test` runs, and how the test-related files interact. It is structured by file, then by related code blocks.
 

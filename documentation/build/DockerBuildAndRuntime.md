@@ -1,4 +1,4 @@
-# Understanding the Dockerfile
+# Docker Build and Runtime
 
 This document explains why this project uses Docker, what the current [Dockerfile](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/Dockerfile) is doing, and how to build and run the container correctly.
 
