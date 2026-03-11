@@ -61,6 +61,27 @@ At a high level, the integration works like this:
 6. Initialize the React SDK in [frontend/src/sentry.ts](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/frontend/src/sentry.ts).
 7. Wrap the React app in [frontend/src/main.tsx](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/frontend/src/main.tsx) with `Sentry.ErrorBoundary`.
 
+## Example Workflow: Frontend Render Failure
+
+1. The browser loads [frontend/index.html](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/frontend/index.html).
+2. [frontend/src/main.tsx](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/frontend/src/main.tsx) imports [frontend/src/sentry.ts](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/frontend/src/sentry.ts) before creating the React tree.
+3. If `VITE_SENTRY_DSN` exists, [frontend/src/sentry.ts](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/frontend/src/sentry.ts) initializes the browser SDK.
+4. [frontend/src/main.tsx](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/frontend/src/main.tsx) renders `<App />` inside `Sentry.ErrorBoundary`.
+5. If the wrapped React tree throws during render or update, the boundary shows the fallback UI and Sentry can record the event.
+
+Important distinction:
+
+- the React boundary handles render-path React failures inside the mounted tree
+- very early bootstrap errors can still reach Sentry through browser-global handlers if Sentry was initialized first
+
+## Example Workflow: Backend Request Failure
+
+1. [src/index.ts](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/src/index.ts) imports [src/sentry.ts](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/src/sentry.ts) before starting the server.
+2. If `SENTRY_DSN` exists, [src/sentry.ts](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/src/sentry.ts) initializes the Node SDK.
+3. [src/app.ts](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/src/app.ts) registers the Express Sentry error handler.
+4. A route or service throws.
+5. Express passes the failure through the error path, where Sentry can capture it and the app logger also records server-side details.
+
 ## What Sentry Does In This Repo
 
 Sentry does not replace the custom logger.
