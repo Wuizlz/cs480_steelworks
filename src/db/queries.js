@@ -6,7 +6,24 @@
  * and review changes against the db/schema.sql source of truth.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UNPROCESSED_SHIPPING_LOGS_SQL = exports.UNPROCESSED_PRODUCTION_LOGS_SQL = exports.INSERT_ISSUE_EVENT_SQL = exports.INSERT_LOT_ASSIGNMENT_SQL = exports.FIND_LOT_ASSIGNMENT_SQL = exports.INSERT_DQ_FLAG_SQL = exports.UPDATE_SHIP_LOG_LOT_SQL = exports.UPDATE_PROD_LOG_LOT_SQL = exports.FIND_LOT_BY_KEY_SQL = exports.FIND_LOT_SQL = exports.UPSERT_ISSUE_TYPE_SQL = exports.UPSERT_PRODUCTION_LINE_SQL = exports.NORMALIZE_LABEL_SQL = exports.NORMALIZE_LOT_ID_SQL = exports.FLAG_COUNTS_SQL = exports.WEEKLY_DETAILS_SQL = exports.WEEKLY_SUMMARY_SQL = void 0;
+exports.UNPROCESSED_SHIPPING_LOGS_SQL =
+  exports.UNPROCESSED_PRODUCTION_LOGS_SQL =
+  exports.INSERT_ISSUE_EVENT_SQL =
+  exports.INSERT_LOT_ASSIGNMENT_SQL =
+  exports.FIND_LOT_ASSIGNMENT_SQL =
+  exports.INSERT_DQ_FLAG_SQL =
+  exports.UPDATE_SHIP_LOG_LOT_SQL =
+  exports.UPDATE_PROD_LOG_LOT_SQL =
+  exports.FIND_LOT_BY_KEY_SQL =
+  exports.FIND_LOT_SQL =
+  exports.UPSERT_ISSUE_TYPE_SQL =
+  exports.UPSERT_PRODUCTION_LINE_SQL =
+  exports.NORMALIZE_LABEL_SQL =
+  exports.NORMALIZE_LOT_ID_SQL =
+  exports.FLAG_COUNTS_SQL =
+  exports.WEEKLY_DETAILS_SQL =
+  exports.WEEKLY_SUMMARY_SQL =
+    void 0;
 // Weekly summary grouped by production line and defect type.
 exports.WEEKLY_SUMMARY_SQL = `
   SELECT

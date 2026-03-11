@@ -14,8 +14,8 @@ exports.asyncHandler = asyncHandler;
  * Space complexity: O(1).
  */
 function asyncHandler(fn) {
-    return (req, res, next) => {
-        // Call the handler and route any rejection to Express error handling.
-        fn(req, res, next).catch(next);
-    };
+  return (req, res, next) => {
+    // Call the handler and route any rejection to Express error handling.
+    fn(req, res, next).catch(next);
+  };
 }

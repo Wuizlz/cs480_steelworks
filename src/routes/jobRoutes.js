@@ -18,27 +18,33 @@ const logger = (0, logger_1.getLogger)("routes.job");
  * Space complexity: O(1) because it allocates a constant number of handlers.
  */
 function createJobRouter(pool) {
-    const router = (0, express_1.Router)();
-    // Trigger data quality processing for both production and shipping logs.
-    router.post("/process-logs", (0, asyncHandler_1.asyncHandler)(async (req, res) => {
-        // Allow an optional batch_size to bound per-call work.
-        const rawBatch = req.body?.batch_size;
-        if (rawBatch !== undefined &&
-            (typeof rawBatch !== "number" || rawBatch <= 0)) {
-            logger.warn("Invalid batch_size supplied to process-logs endpoint", {
-                batch_size: rawBatch,
-            });
-        }
-        const batchSize = typeof rawBatch === "number" && rawBatch > 0 ? rawBatch : undefined;
-        logger.info("Processing logs requested", {
-            batch_size: batchSize ?? "default",
+  const router = (0, express_1.Router)();
+  // Trigger data quality processing for both production and shipping logs.
+  router.post(
+    "/process-logs",
+    (0, asyncHandler_1.asyncHandler)(async (req, res) => {
+      // Allow an optional batch_size to bound per-call work.
+      const rawBatch = req.body?.batch_size;
+      if (
+        rawBatch !== undefined &&
+        (typeof rawBatch !== "number" || rawBatch <= 0)
+      ) {
+        logger.warn("Invalid batch_size supplied to process-logs endpoint", {
+          batch_size: rawBatch,
         });
-        const result = await (0, ingestService_1.processAllLogs)(pool, batchSize);
-        res.json({
-            batch_size: batchSize ?? undefined,
-            production: result.production,
-            shipping: result.shipping,
-        });
-    }));
-    return router;
+      }
+      const batchSize =
+        typeof rawBatch === "number" && rawBatch > 0 ? rawBatch : undefined;
+      logger.info("Processing logs requested", {
+        batch_size: batchSize ?? "default",
+      });
+      const result = await (0, ingestService_1.processAllLogs)(pool, batchSize);
+      res.json({
+        batch_size: batchSize ?? undefined,
+        production: result.production,
+        shipping: result.shipping,
+      });
+    }),
+  );
+  return router;
 }

@@ -18,8 +18,8 @@ exports.defaultWeekRangeUTC = defaultWeekRangeUTC;
  * Space complexity: O(1) because it allocates a constant-size string.
  */
 function toIsoDateUTC(date) {
-    // Use toISOString to ensure UTC, then slice to keep only the date part.
-    return date.toISOString().slice(0, 10);
+  // Use toISOString to ensure UTC, then slice to keep only the date part.
+  return date.toISOString().slice(0, 10);
 }
 /**
  * Get the week start (Monday) for a given Date in UTC.
@@ -28,13 +28,19 @@ function toIsoDateUTC(date) {
  * Space complexity: O(1) because it creates a single Date object.
  */
 function getWeekStartUTC(date) {
-    // JavaScript getUTCDay(): 0 = Sunday, 1 = Monday, ... 6 = Saturday.
-    const utcDay = date.getUTCDay();
-    // Compute how many days have passed since Monday (0 if Monday).
-    const daysSinceMonday = (utcDay + 6) % 7;
-    // Create a new Date at midnight UTC for deterministic week starts.
-    const weekStart = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() - daysSinceMonday));
-    return weekStart;
+  // JavaScript getUTCDay(): 0 = Sunday, 1 = Monday, ... 6 = Saturday.
+  const utcDay = date.getUTCDay();
+  // Compute how many days have passed since Monday (0 if Monday).
+  const daysSinceMonday = (utcDay + 6) % 7;
+  // Create a new Date at midnight UTC for deterministic week starts.
+  const weekStart = new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate() - daysSinceMonday,
+    ),
+  );
+  return weekStart;
 }
 /**
  * Add or subtract whole weeks from a Date in UTC.
@@ -43,11 +49,11 @@ function getWeekStartUTC(date) {
  * Space complexity: O(1) because it creates a single Date object.
  */
 function addWeeksUTC(date, weeks) {
-    // Clone the input date to avoid mutating the caller's object.
-    const next = new Date(date.getTime());
-    // Each week is exactly 7 days.
-    next.setUTCDate(next.getUTCDate() + weeks * 7);
-    return next;
+  // Clone the input date to avoid mutating the caller's object.
+  const next = new Date(date.getTime());
+  // Each week is exactly 7 days.
+  next.setUTCDate(next.getUTCDate() + weeks * 7);
+  return next;
 }
 /**
  * Safely parse a YYYY-MM-DD string into a Date (UTC midnight).
@@ -57,18 +63,18 @@ function addWeeksUTC(date, weeks) {
  * Space complexity: O(1) because it creates at most one Date object.
  */
 function parseIsoDateUTC(value) {
-    // Enforce strict YYYY-MM-DD format to avoid ambiguous parsing.
-    const match = /^\d{4}-\d{2}-\d{2}$/.exec(value);
-    if (!match) {
-        return null;
-    }
-    // Construct an ISO string with an explicit UTC timezone offset.
-    const parsed = new Date(`${value}T00:00:00.000Z`);
-    // Reject invalid dates such as 2026-02-30.
-    if (Number.isNaN(parsed.getTime())) {
-        return null;
-    }
-    return parsed;
+  // Enforce strict YYYY-MM-DD format to avoid ambiguous parsing.
+  const match = /^\d{4}-\d{2}-\d{2}$/.exec(value);
+  if (!match) {
+    return null;
+  }
+  // Construct an ISO string with an explicit UTC timezone offset.
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  // Reject invalid dates such as 2026-02-30.
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+  return parsed;
 }
 /**
  * Compute a default week range that ends at the current week start.
@@ -77,14 +83,14 @@ function parseIsoDateUTC(value) {
  * Space complexity: O(1) because it creates a constant number of objects.
  */
 function defaultWeekRangeUTC(weeksBack) {
-    // Get the current time in UTC.
-    const now = new Date();
-    // Anchor the range end at the current week's Monday.
-    const endWeekStart = getWeekStartUTC(now);
-    // Move backwards by (weeksBack - 1) weeks to include the current week.
-    const startWeekStart = addWeeksUTC(endWeekStart, -(weeksBack - 1));
-    return {
-        start: toIsoDateUTC(startWeekStart),
-        end: toIsoDateUTC(endWeekStart),
-    };
+  // Get the current time in UTC.
+  const now = new Date();
+  // Anchor the range end at the current week's Monday.
+  const endWeekStart = getWeekStartUTC(now);
+  // Move backwards by (weeksBack - 1) weeks to include the current week.
+  const startWeekStart = addWeeksUTC(endWeekStart, -(weeksBack - 1));
+  return {
+    start: toIsoDateUTC(startWeekStart),
+    end: toIsoDateUTC(endWeekStart),
+  };
 }
