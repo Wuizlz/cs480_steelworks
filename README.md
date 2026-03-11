@@ -62,14 +62,33 @@ The job `/jobs/process-logs` performs the rules in the acceptance criteria.
 
 Run tests with `npm test`.
 
-## Docker (Intro)
+## Docker
 
-This repo can be run in Docker as a simple test runner.
+The Dockerfile now builds a production image for the full app:
+
+- compiles the TypeScript API into `dist/`
+- builds the React UI into `frontend/dist/`
+- serves the built UI from the Express server on port `3000`
+
+Build the image:
 
 ```bash
-docker build -t markdown-demo .
-docker run --rm markdown-demo
+docker build \
+  --build-arg VITE_SENTRY_DSN="$VITE_SENTRY_DSN" \
+  -t markdown-demo .
 ```
+
+Run the container with your backend environment variables:
+
+```bash
+docker run --rm -p 3000:3000 --env-file .env markdown-demo
+```
+
+Important:
+
+- backend env vars such as `PGHOST`, `PGUSER`, `PGPASSWORD`, `SENTRY_DSN`, and `PORT` are read at container runtime
+- `VITE_SENTRY_DSN` is a frontend Vite variable, so it must be provided at image build time with `--build-arg`
+- if you change `VITE_SENTRY_DSN`, rebuild the image so the new value is baked into the frontend bundle
 
 ## Formatter, Linter, Type Check, Coverage (TSX Equivalents)
 
