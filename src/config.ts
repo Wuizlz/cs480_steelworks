@@ -41,6 +41,7 @@ const envSchema = z.object({
     .optional(),
   LOG_DIR: z.string().min(1).optional().default("logs"),
   LOG_FILE_NAME: z.string().min(1).optional().default("app.log"),
+  SENTRY_DSN: z.string().url().optional(),
 });
 
 // Parse and validate environment variables once at startup.
@@ -109,5 +110,8 @@ export const config = {
     maxBytes: 5 * 1024 * 1024,
     maxFiles: 3,
     enableFileLogging: parsed.data.NODE_ENV !== "test",
+  },
+  sentry: {
+    dsn: parsed.data.SENTRY_DSN,
   },
 };

@@ -5,6 +5,7 @@
  * database resources cleanly.
  */
 
+import "./sentry";
 import { createApp } from "./app";
 import { config } from "./config";
 import { createPool } from "./db/pool";
@@ -27,6 +28,7 @@ logger.info("Application startup", {
   port: config.port,
   log_dir: config.logging.logDir,
   log_file: config.logging.fileName,
+  sentry_enabled: Boolean(config.sentry.dsn),
 });
 
 // Create the database pool shared across requests.

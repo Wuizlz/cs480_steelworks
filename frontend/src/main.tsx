@@ -6,8 +6,13 @@
 
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { Sentry } from "./sentry";
 import App from "./App";
 import "./styles.css";
+
+function SentryFallback(): JSX.Element {
+  return <div>Something went wrong.</div>;
+}
 
 // Locate the root element provided by index.html.
 const rootElement = document.getElementById("root");
@@ -25,6 +30,8 @@ const root = createRoot(rootElement);
 // Space complexity: O(1) for storing the root reference.
 root.render(
   <React.StrictMode>
-    <App />
+    <Sentry.ErrorBoundary fallback={SentryFallback}>
+      <App />
+    </Sentry.ErrorBoundary>
   </React.StrictMode>,
 );

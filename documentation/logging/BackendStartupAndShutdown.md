@@ -68,6 +68,7 @@ import { createApp } from "./app";
 This imports the function that creates the Express application instance.
 
 What it gives us:
+
 - route registration
 - middleware registration
 - error handling
@@ -85,6 +86,7 @@ import { config } from "./config";
 This imports the validated runtime configuration.
 
 What it contains:
+
 - environment name
 - server port
 - database settings
@@ -103,6 +105,7 @@ import { createPool } from "./db/pool";
 This imports the helper that creates the PostgreSQL connection pool.
 
 Why a pool is used:
+
 - opening a fresh database connection per request is expensive
 - a pool reuses connections
 - it gives the app a shared database access layer
@@ -150,6 +153,7 @@ before the server starts listening.
 That ordering is intentional.
 
 Why configure logging this early:
+
 - if database setup fails, we want that failure logged
 - if the app crashes during startup, we want that failure logged
 - if the server starts successfully, we want that startup event logged too
@@ -159,6 +163,7 @@ Why configure logging this early:
 #### `environment: config.environment`
 
 This tells the logger whether it is running in:
+
 - `development`
 - `test`
 - `production`
@@ -166,6 +171,7 @@ This tells the logger whether it is running in:
 This affects default behavior.
 
 Example:
+
 - development can be noisy and verbose
 - production should be more selective
 
@@ -174,6 +180,7 @@ Example:
 This is the main logging threshold.
 
 Meaning:
+
 - `debug` logs everything
 - `info` logs informational events and above
 - `warn` logs warnings and errors
@@ -189,6 +196,7 @@ Why separate it from `level`:
 You may want to write more logs to file than you print to the console.
 
 Example:
+
 - file logs might keep `info`
 - console might show only `warn` and `error`
 
@@ -217,6 +225,7 @@ In this project, it is set to `5 MB`.
 This is the number of rotated backup files to keep.
 
 In this project:
+
 - `app.log` is the current live file
 - `app.log.1` is the newest rotated backup
 - `app.log.2` is older
@@ -255,6 +264,7 @@ Example log line:
 ```
 
 Why use a module name:
+
 - it tells you where a log came from
 - it makes debugging faster
 - it separates startup logs from route logs or service logs
@@ -264,6 +274,7 @@ Why use a module name:
 This writes a startup log entry.
 
 Why log startup:
+
 - confirms the app began booting
 - captures important boot configuration
 - helps prove which environment and port were used
@@ -282,6 +293,7 @@ Why log startup:
 This object is structured metadata.
 
 Why structured metadata is useful:
+
 - machines can parse it
 - humans can read it
 - it avoids packing everything into a single long string
@@ -289,7 +301,7 @@ Why structured metadata is useful:
 Instead of logging:
 
 ```ts
-"Application startup on port 3000 in development using logs/app.log"
+"Application startup on port 3000 in development using logs/app.log";
 ```
 
 we log:
@@ -314,6 +326,7 @@ These two lines build the main backend dependencies.
 This creates the shared PostgreSQL connection pool.
 
 Why it happens before the app is used:
+
 - routes and services need database access
 - the app should use one shared pool, not create a new pool per request
 
@@ -325,6 +338,7 @@ Every request that needs the database can borrow a connection from this pool.
 This creates the Express app and injects the pool into it.
 
 Why pass the pool in:
+
 - it makes dependencies explicit
 - it improves testability
 - it avoids hidden global state
@@ -364,6 +378,7 @@ const server = ...
 The `server` object is saved because it is needed later for shutdown.
 
 Without this object:
+
 - you can start the server
 - but you cannot properly tell it to stop accepting new requests
 
@@ -372,7 +387,7 @@ Without this object:
 ```ts
 () => {
   logger.info("HTTP server listening", { port: config.port });
-}
+};
 ```
 
 This callback only runs after the server successfully starts listening.
@@ -380,6 +395,7 @@ This callback only runs after the server successfully starts listening.
 That means this log is stronger than the earlier startup log.
 
 Difference:
+
 - `Application startup` means the boot sequence started
 - `HTTP server listening` means boot completed successfully
 
@@ -412,11 +428,13 @@ async function shutdown(signal: string): Promise<void> {
 This function handles graceful shutdown.
 
 Graceful shutdown means:
+
 - stop taking new requests
 - clean up resources
 - exit intentionally
 
 instead of:
+
 - abruptly killing the process
 - leaving connections hanging
 - losing visibility into shutdown behavior
@@ -429,6 +447,7 @@ Why it accepts `signal: string`:
 The app wants to know what caused the shutdown.
 
 Examples:
+
 - `SIGINT` often comes from pressing `Ctrl + C`
 - `SIGTERM` often comes from a deployment platform or container orchestrator
 
@@ -437,6 +456,7 @@ Examples:
 This logs the fact that shutdown has started.
 
 Why this is useful:
+
 - proves the process received the signal
 - distinguishes shutdown from crashes
 - helps when investigating deployments or restarts
@@ -446,6 +466,7 @@ Why this is useful:
 This is critical.
 
 It tells the HTTP server:
+
 - stop accepting new incoming connections
 - finish handling requests already in progress
 
@@ -457,6 +478,7 @@ If you just call `process.exit()` immediately, active requests could be cut off.
 This closes the Postgres pool.
 
 What it means:
+
 - database clients are cleaned up
 - TCP connections are closed
 - the process avoids leaking open DB resources
@@ -476,6 +498,7 @@ This is the "happy path" end-of-life log.
 Exit code `0` means success.
 
 That tells the operating system:
+
 - shutdown completed normally
 - this was not considered a fatal failure
 
@@ -495,6 +518,7 @@ If cleanup fails, the app logs it as an error.
 
 Why `toErrorMeta(error)` is used:
 It converts the thrown error into structured fields like:
+
 - error name
 - error message
 - stack trace
@@ -529,6 +553,7 @@ process.on("SIGTERM", () => void shutdown("SIGTERM"));
 ```
 
 This signal is commonly used by:
+
 - hosting platforms
 - Docker
 - orchestration systems
@@ -542,6 +567,7 @@ stopping.
 `shutdown(...)` returns a promise because it is `async`.
 
 The `void` tells TypeScript and readers:
+
 - we intentionally trigger the async function
 - we are not awaiting it in this event callback
 
@@ -559,6 +585,7 @@ An `uncaughtException` means some synchronous error escaped all normal error
 handling and reached the process level.
 
 Why log this:
+
 - it is a serious failure
 - it often explains why the process became unstable
 - the stack trace is usually essential
@@ -577,6 +604,7 @@ An `unhandledRejection` means a promise failed and nobody handled the rejection.
 
 Why this matters in Node.js:
 Many backend operations are async:
+
 - database calls
 - HTTP calls
 - file operations
@@ -589,6 +617,7 @@ If a promise rejection is ignored, the process can become unpredictable.
 Not every rejected promise throws an actual `Error` object.
 
 Some bad code rejects with:
+
 - strings
 - plain objects
 - numbers
@@ -596,10 +625,11 @@ Some bad code rejects with:
 So this line handles both cases:
 
 ```ts
-reason instanceof Error ? toErrorMeta(reason) : String(reason)
+reason instanceof Error ? toErrorMeta(reason) : String(reason);
 ```
 
 Meaning:
+
 - if it is a real `Error`, preserve structured error details
 - otherwise, convert it to a readable string
 
@@ -642,6 +672,7 @@ This file is the correct place to configure logging because it sits at the top
 of the backend lifecycle.
 
 That gives it control over:
+
 - startup logs
 - server-ready logs
 - shutdown logs
@@ -693,6 +724,7 @@ It does not process manufacturing logs.
 It does not define routes.
 
 Instead, it coordinates the system:
+
 - initialize shared infrastructure
 - start the application
 - announce important lifecycle events through logging

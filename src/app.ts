@@ -9,6 +9,8 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import fs from "fs";
 import path from "path";
 import { Pool } from "pg";
+import { Sentry } from "./sentry";
+import { config } from "./config";
 import { getLogger, toErrorMeta } from "./logging/logger";
 import { createJobRouter } from "./routes/jobRoutes";
 import { createReportRouter } from "./routes/reportRoutes";
@@ -83,6 +85,11 @@ export function createApp(pool: Pool): Application {
     app.use(express.static(uiDistPath));
   }
 
+  if (config.sentry.dsn) {
+    // Sentry recommends adding this after routes and before custom error handlers.
+    Sentry.setupExpressErrorHandler(app);
+  }
+
   // Centralized error handler for async route failures.
   app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
     // Log the error for server-side diagnostics.
@@ -97,6 +104,7 @@ export function createApp(pool: Pool): Application {
 
   appLogger.info("Express application created", {
     serves_frontend: fs.existsSync(uiDistPath),
+    sentry_enabled: Boolean(config.sentry.dsn),
   });
 
   return app;

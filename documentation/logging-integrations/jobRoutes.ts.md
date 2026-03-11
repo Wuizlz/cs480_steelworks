@@ -83,10 +83,7 @@ That separates route-level intent logs from the deeper ingest-service logs.
 ## Section 2: Invalid Input Warning
 
 ```ts
-if (
-  rawBatch !== undefined &&
-  (typeof rawBatch !== "number" || rawBatch <= 0)
-) {
+if (rawBatch !== undefined && (typeof rawBatch !== "number" || rawBatch <= 0)) {
   logger.warn("Invalid batch_size supplied to process-logs endpoint", {
     batch_size: rawBatch,
   });
