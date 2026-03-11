@@ -222,6 +222,12 @@ This is important because the Sentry docs example often shows generic mount exam
 
 So the integration had to match this project’s actual frontend structure, not a generic snippet.
 
+Important edge case:
+
+- if `#root` is missing and the code throws before `root.render(...)`, the React `ErrorBoundary` does not exist yet, so it cannot catch that failure
+- if `Sentry.init(...)` already ran, the browser SDK may still capture the uncaught top-level error through global instrumentation
+- that means this case is outside the boundary, even though it can still reach Sentry when frontend Sentry is enabled
+
 ### Group 4: wrap `<App />` in `Sentry.ErrorBoundary`
 
 ```tsx
