@@ -9,8 +9,12 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import fs from "fs";
 import path from "path";
 import { Pool } from "pg";
+import { getLogger, toErrorMeta } from "./logging/logger";
 import { createJobRouter } from "./routes/jobRoutes";
 import { createReportRouter } from "./routes/reportRoutes";
+
+const appLogger = getLogger("app");
+const httpLogger = getLogger("http");
 
 /**
  * Build the Express application using the provided database pool.
@@ -24,6 +28,41 @@ export function createApp(pool: Pool): Application {
 
   // Parse JSON request bodies for POST endpoints.
   app.use(express.json({ limit: "1mb" }));
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const startedAt = process.hrtime.bigint();
+
+    res.on("finish", () => {
+      const durationMs =
+        Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+      const pathName = req.originalUrl || req.url;
+      const meta = {
+        method: req.method,
+        path: pathName,
+        status_code: res.statusCode,
+        duration_ms: Number(durationMs.toFixed(1)),
+      };
+
+      if (pathName === "/health" && res.statusCode < 400) {
+        httpLogger.debug("HTTP request completed", meta);
+        return;
+      }
+
+      if (res.statusCode >= 500) {
+        httpLogger.error("HTTP request completed", meta);
+        return;
+      }
+
+      if (res.statusCode >= 400) {
+        httpLogger.warn("HTTP request completed", meta);
+        return;
+      }
+
+      httpLogger.info("HTTP request completed", meta);
+    });
+
+    next();
+  });
 
   // Basic health check to confirm the service is running.
   app.get("/health", (_req: Request, res: Response) => {
@@ -45,11 +84,19 @@ export function createApp(pool: Pool): Application {
   }
 
   // Centralized error handler for async route failures.
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
     // Log the error for server-side diagnostics.
-    console.error(err);
+    appLogger.error("Unhandled request error", {
+      method: req.method,
+      path: req.originalUrl || req.url,
+      ...toErrorMeta(err),
+    });
 
     res.status(500).json({ error: "Internal server error" });
+  });
+
+  appLogger.info("Express application created", {
+    serves_frontend: fs.existsSync(uiDistPath),
   });
 
   return app;
