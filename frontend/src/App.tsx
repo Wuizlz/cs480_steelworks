@@ -6,6 +6,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
+import { Sentry } from "./sentry";
 import type {
   FlagCountResponse,
   ProcessLogsResponse,
@@ -640,6 +641,15 @@ export default function App(): JSX.Element {
           </label>
           <button type="submit" disabled={jobLoading}>
             {jobLoading ? "Running..." : "Run Processing Job"}
+          </button>
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => {
+              Sentry.captureException(new Error("Frontend Sentry test"));
+            }}
+          >
+            Test Frontend Sentry
           </button>
         </form>
 

@@ -10,6 +10,9 @@ export default defineConfig({
   // Set the frontend folder as the Vite root.
   root: __dirname,
 
+  // Load env files from the repo root so frontend and backend share .env.
+  envDir: "..",
+
   // Enable React fast refresh and JSX transformations.
   plugins: [react()],
 
