@@ -1,3 +1,28 @@
+# Understanding `src/routes/reportRoutes.ts`
+
+This document explains how [src/routes/reportRoutes.ts](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/src/routes/reportRoutes.ts) logs invalid reporting requests before they reach the service layer.
+
+This file is a validation-and-routing layer for report endpoints.
+
+## Why This File Matters for Logging
+
+This route module logs warnings when incoming requests are malformed, such as:
+
+- invalid date ranges
+- missing required filters
+- invalid `week_start` values
+
+It does not log query success or database failure directly. That happens later in
+[src/services/reportService.ts](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/src/services/reportService.ts).
+
+So this file's logging role is:
+
+- catch bad input early
+- explain rejected requests
+
+## Full Code
+
+```ts
 /**
  * Express routes for reporting endpoints.
  *
@@ -17,32 +42,21 @@ import { defaultWeekRangeUTC, parseIsoDateUTC } from "../utils/date";
 
 const logger = getLogger("routes.report");
 
-/**
- * Build a router with report endpoints bound to a database pool.
- *
- * Time complexity: O(1) because it creates router handlers.
- * Space complexity: O(1) because it allocates a constant number of handlers.
- */
 export function createReportRouter(pool: Pool): Router {
-  // Create a new router instance for report endpoints.
   const router = Router();
 
-  // Weekly summary endpoint: /reports/weekly-summary
   router.get(
     "/weekly-summary",
     asyncHandler(async (req: Request, res: Response) => {
-      // Extract optional week range parameters.
       const startWeek =
         typeof req.query.start_week === "string" ? req.query.start_week : null;
       const endWeek =
         typeof req.query.end_week === "string" ? req.query.end_week : null;
 
-      // Use a default 4-week range if parameters are missing.
       const defaultRange = defaultWeekRangeUTC(4);
       const rangeStart = startWeek ?? defaultRange.start;
       const rangeEnd = endWeek ?? defaultRange.end;
 
-      // Validate date formats before hitting the database.
       if (!parseIsoDateUTC(rangeStart) || !parseIsoDateUTC(rangeEnd)) {
         logger.warn("Rejected weekly summary request with invalid date range", {
           start_week: rangeStart,
@@ -54,7 +68,6 @@ export function createReportRouter(pool: Pool): Router {
         return;
       }
 
-      // Query the database for the weekly summary.
       const summary = await getWeeklySummary(pool, rangeStart, rangeEnd);
 
       res.json({
@@ -65,11 +78,9 @@ export function createReportRouter(pool: Pool): Router {
     }),
   );
 
-  // Weekly detail endpoint: /reports/weekly-details
   router.get(
     "/weekly-details",
     asyncHandler(async (req: Request, res: Response) => {
-      // Extract required filters from the query string.
       const weekStart =
         typeof req.query.week_start === "string" ? req.query.week_start : null;
       const lineName =
@@ -79,7 +90,6 @@ export function createReportRouter(pool: Pool): Router {
           ? req.query.defect_type
           : null;
 
-      // Validate required params.
       if (!weekStart || !lineName || !defectType) {
         logger.warn("Rejected weekly details request with missing filters", {
           week_start: weekStart,
@@ -100,7 +110,6 @@ export function createReportRouter(pool: Pool): Router {
         return;
       }
 
-      // Query the database for underlying detail records.
       const details = await getWeeklyDetails(
         pool,
         weekStart,
@@ -117,22 +126,18 @@ export function createReportRouter(pool: Pool): Router {
     }),
   );
 
-  // Flag counts endpoint: /reports/flags
   router.get(
     "/flags",
     asyncHandler(async (req: Request, res: Response) => {
-      // Extract optional week range parameters.
       const startWeek =
         typeof req.query.start_week === "string" ? req.query.start_week : null;
       const endWeek =
         typeof req.query.end_week === "string" ? req.query.end_week : null;
 
-      // Use a default 4-week range if parameters are missing.
       const defaultRange = defaultWeekRangeUTC(4);
       const rangeStart = startWeek ?? defaultRange.start;
       const rangeEnd = endWeek ?? defaultRange.end;
 
-      // Validate date formats before hitting the database.
       if (!parseIsoDateUTC(rangeStart) || !parseIsoDateUTC(rangeEnd)) {
         logger.warn("Rejected flag counts request with invalid date range", {
           start_week: rangeStart,
@@ -144,7 +149,6 @@ export function createReportRouter(pool: Pool): Router {
         return;
       }
 
-      // Query the database for flag counts.
       const flags = await getFlagCounts(pool, rangeStart, rangeEnd);
 
       res.json({
@@ -157,3 +161,113 @@ export function createReportRouter(pool: Pool): Router {
 
   return router;
 }
+```
+
+## Section 1: Module Logger
+
+```ts
+const logger = getLogger("routes.report");
+```
+
+This groups validation-related route logs under `routes.report`.
+
+That keeps them distinct from:
+
+- `http` request completion logs
+- `service.report` query execution logs
+
+## Section 2: Why These Are Warnings
+
+Every logging call in this route file uses `logger.warn(...)`.
+
+That is appropriate because:
+
+- the server is still working
+- the request was rejected for a reason
+- the situation is unusual enough to record
+
+These are not `error` logs because the system itself did not fail.
+The client simply made a request that did not pass validation.
+
+## Section 3: Weekly Summary Validation Log
+
+```ts
+logger.warn("Rejected weekly summary request with invalid date range", {
+  start_week: rangeStart,
+  end_week: rangeEnd,
+});
+```
+
+This captures the invalid range values before the request is rejected with `400`.
+
+Why this is helpful:
+
+- explains why the route returned a validation error
+- preserves the actual bad values used in the request
+
+## Section 4: Weekly Details Validation Logs
+
+The details endpoint logs two different validation failures.
+
+### Missing required filters
+
+```ts
+logger.warn("Rejected weekly details request with missing filters", {
+  week_start: weekStart,
+  line_name: lineName,
+  defect_type: defectType,
+});
+```
+
+This records incomplete requests.
+
+### Invalid date format
+
+```ts
+logger.warn("Rejected weekly details request with invalid week_start", {
+  week_start: weekStart,
+});
+```
+
+This records a malformed date value even when other parameters are present.
+
+That separation is useful because the cause of rejection is not the same.
+
+## Section 5: Flag Counts Validation Log
+
+```ts
+logger.warn("Rejected flag counts request with invalid date range", {
+  start_week: rangeStart,
+  end_week: rangeEnd,
+});
+```
+
+This is the same idea as weekly summary validation, but for the flag-report endpoint.
+
+The route logs the bad input and rejects the request before touching the database.
+
+## Section 6: Relationship to `reportService.ts`
+
+This file stops bad requests early.
+
+That means:
+
+- route file logs validation problems
+- service file logs actual query execution
+
+This is a clean separation of concerns.
+
+It prevents query-level logs from being polluted by requests that never should
+have reached the database in the first place.
+
+## Final Mental Model
+
+You can think of `src/routes/reportRoutes.ts` as the filter layer for reporting logs.
+
+It tells you:
+
+- when requests were rejected
+- why they were rejected
+- what bad values caused the rejection
+
+Then `src/services/reportService.ts` takes over for valid requests.

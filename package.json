@@ -28,6 +28,8 @@
     ]
   },
   "dependencies": {
+    "@sentry/node": "^10.43.0",
+    "@sentry/react": "^10.43.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "pg": "^8.12.0",
