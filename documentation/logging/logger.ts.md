@@ -255,7 +255,7 @@ enforcing its shape.
 This type:
 
 ```ts
-Record<LogLevelName, number>
+Record<LogLevelName, number>;
 ```
 
 means:
@@ -272,7 +272,7 @@ type LogLevelName = "debug" | "info" | "warn" | "error" | "silent";
 then:
 
 ```ts
-Record<LogLevelName, number>
+Record<LogLevelName, number>;
 ```
 
 is essentially the same idea as:
@@ -297,10 +297,10 @@ At compile time, TypeScript checks that:
 That is why this object can safely be used later like:
 
 ```ts
-LEVELS["debug"]   // 10
-LEVELS["info"]    // 20
-LEVELS["warn"]    // 30
-LEVELS["error"]   // 40
+LEVELS["debug"]; // 10
+LEVELS["info"]; // 20
+LEVELS["warn"]; // 30
+LEVELS["error"]; // 40
 ```
 
 Why use numbers:
@@ -389,7 +389,7 @@ This is where `this.config.level` comes from later in the `write(...)` method.
 So when you see:
 
 ```ts
-this.config.level
+this.config.level;
 ```
 
 that means:
@@ -489,7 +489,7 @@ There are two different `level` values involved:
 So if the app does:
 
 ```ts
-logger.debug("something")
+logger.debug("something");
 ```
 
 then inside `write(...)`:
@@ -499,19 +499,19 @@ then inside `write(...)`:
 If the logger configuration says:
 
 ```ts
-this.config.level === "info"
+this.config.level === "info";
 ```
 
 then the check becomes:
 
 ```ts
-LEVELS["debug"] < LEVELS["info"]
+LEVELS["debug"] < LEVELS["info"];
 ```
 
 which means:
 
 ```ts
-10 < 20
+10 < 20;
 ```
 
 So the logger drops the message.
@@ -519,19 +519,19 @@ So the logger drops the message.
 If the app does:
 
 ```ts
-logger.error("something failed")
+logger.error("something failed");
 ```
 
 then the check becomes:
 
 ```ts
-LEVELS["error"] < LEVELS["info"]
+LEVELS["error"] < LEVELS["info"];
 ```
 
 which means:
 
 ```ts
-40 < 20
+40 < 20;
 ```
 
 That is false, so the logger keeps the message.
@@ -1111,7 +1111,9 @@ This gives logs much better debugging value.
 It falls back to:
 
 ```ts
-{ error_message: String(error) }
+{
+  error_message: String(error);
+}
 ```
 
 This ensures logging still succeeds.
@@ -1168,14 +1170,14 @@ throw "something bad happened";
 then:
 
 ```ts
-toErrorMeta("something bad happened")
+toErrorMeta("something bad happened");
 ```
 
 becomes:
 
 ```ts
 {
-  error_message: "something bad happened"
+  error_message: "something bad happened";
 }
 ```
 
@@ -1189,7 +1191,7 @@ then:
 
 ```ts
 {
-  error_message: "123"
+  error_message: "123";
 }
 ```
 
@@ -1203,7 +1205,7 @@ then:
 
 ```ts
 {
-  error_message: "[object Object]"
+  error_message: "[object Object]";
 }
 ```
 
@@ -1349,7 +1351,7 @@ If `NODE_ENV` exists, use it.
 ### Special test fallback
 
 ```ts
-(process.env.JEST_WORKER_ID ? "test" : "development")
+process.env.JEST_WORKER_ID ? "test" : "development";
 ```
 
 If `NODE_ENV` is missing but Jest is running, infer `test`.
@@ -1486,7 +1488,7 @@ Why:
 ### Normal case
 
 ```ts
-JSON.stringify(normalizeValue(meta))
+JSON.stringify(normalizeValue(meta));
 ```
 
 Before stringifying, the logger normalizes the values.
@@ -1498,7 +1500,7 @@ That is important because not everything in JavaScript serializes cleanly by def
 If serialization somehow fails, the logger still returns a valid fallback string:
 
 ```json
-{"log_meta_error":"Failed to serialize metadata"}
+{ "log_meta_error": "Failed to serialize metadata" }
 ```
 
 This is an example of defensive logging design. Logging itself should not crash the app.

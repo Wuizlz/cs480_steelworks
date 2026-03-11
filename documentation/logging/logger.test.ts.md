@@ -379,7 +379,7 @@ If no rotated file exists, then the test did not really prove the rotation logic
 ### Why `<= 4`
 
 ```ts
-files.filter((name) => name.startsWith("app.log")).length
+files.filter((name) => name.startsWith("app.log")).length;
 ```
 
 counts:
