@@ -13,6 +13,8 @@ Docker packages your app and its runtime dependencies into an image. You can the
 
 **Dockerfile Breakdown**
 
+Important: the snippet below is a simplified teaching example. It is not the current production Dockerfile used by this repo anymore.
+
 ```dockerfile
 FROM node:20-alpine
 WORKDIR /app
@@ -72,7 +74,7 @@ Important: `CMD` is a default. You can override it at runtime:
 docker run --rm markdown-demo npm run build
 ```
 
-So yes, with the current `CMD`, the container only runs tests unless you override it.
+So yes, with that simplified example `CMD`, the container would only run tests unless you override it.
 
 **What Is an Image (Plain Language)**
 
@@ -86,6 +88,307 @@ docker run --rm markdown-demo
 ```
 
 This builds the image and runs the tests in a container.
+
+## Current Repo Dockerfile (What We Actually Use Now)
+
+The real [Dockerfile](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/Dockerfile) in this repo is:
+
+```dockerfile
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+ENV HUSKY=0
+
+ARG VITE_SENTRY_DSN=""
+ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+RUN npm run build \
+  && npm run build:ui \
+  && npm prune --omit=dev
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+COPY --from=builder /app/package.json /app/package-lock.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/frontend/dist ./frontend/dist
+
+EXPOSE 3000
+
+CMD ["node", "dist/index.js"]
+```
+
+### What Changed From The Simplified Example
+
+The real Dockerfile is no longer:
+
+- single-stage
+- test-only
+- `CMD ["npm", "test"]`
+
+Instead, it is now:
+
+- a multi-stage build
+- responsible for building both backend and frontend
+- set up to run the actual production app with `node dist/index.js`
+
+### Stage 1: `builder`
+
+The `builder` stage exists to compile the application.
+
+It does all of the heavy work:
+
+- installs dependencies with `npm ci`
+- copies the full repo
+- runs `npm run build` for the backend
+- runs `npm run build:ui` for the frontend
+- removes dev dependencies with `npm prune --omit=dev`
+
+This stage needs the source code and build tooling.
+
+### Why `ARG VITE_SENTRY_DSN` Is In The Builder Stage
+
+This was one of the most important details we discussed.
+
+`VITE_SENTRY_DSN` is a frontend Vite variable, not a normal backend runtime env var.
+
+That means:
+
+- Vite must see it while the frontend is being built
+- it gets baked into the generated frontend bundle
+- changing it later at `docker run` time does not change the already-built frontend files
+
+That is why the Dockerfile does:
+
+```dockerfile
+ARG VITE_SENTRY_DSN=""
+ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
+```
+
+and why the build command can include:
+
+```bash
+docker build --build-arg VITE_SENTRY_DSN="$VITE_SENTRY_DSN" -t markdown-demo .
+```
+
+### Stage 2: `runner`
+
+The `runner` stage exists to run the app, not compile it.
+
+It only keeps what the app needs at runtime:
+
+- `node_modules`
+- `package.json`
+- `package-lock.json`
+- backend output in `dist/`
+- frontend output in `frontend/dist/`
+
+This is why the final container can serve both:
+
+- the backend API
+- the built frontend static assets
+
+without carrying the full TypeScript/Vite source tree into the final runtime image.
+
+### What Is Inside `/app` In The Running Container
+
+When the container is running, `/app` should contain the runtime artifacts copied in the `runner` stage:
+
+- `/app/dist`
+- `/app/frontend/dist`
+- `/app/node_modules`
+- `/app/package.json`
+- `/app/package-lock.json`
+
+The backend starts from:
+
+```text
+/app/dist/index.js
+```
+
+and [src/app.ts](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/src/app.ts) serves the built frontend from:
+
+```text
+/app/frontend/dist
+```
+
+## Commands We Discussed For This Repo
+
+### Build The Image
+
+```bash
+docker build --build-arg VITE_SENTRY_DSN="$VITE_SENTRY_DSN" -t markdown-demo .
+```
+
+What this does:
+
+- looks for `Dockerfile` in the current directory by default
+- sends the repo as the build context
+- builds the image described by that Dockerfile
+- tags the built image as `markdown-demo`
+
+If you want a different image tag, for example:
+
+```bash
+docker build --build-arg VITE_SENTRY_DSN="$VITE_SENTRY_DSN" -t steelworks .
+```
+
+then the built image is tagged `steelworks` instead.
+
+### Run The Container
+
+```bash
+docker run --rm -p 8501:3000 --env-file .env.docker markdown-demo
+```
+
+What this does:
+
+- creates a container from the `markdown-demo` image
+- maps host port `8501` to container port `3000`
+- injects backend runtime env vars from `.env.docker`
+- starts the app with `node dist/index.js`
+
+Important distinction:
+
+- `--build-arg VITE_SENTRY_DSN=...` is for frontend build-time config
+- `--env-file .env.docker` is for backend runtime config
+
+### See Running Containers
+
+```bash
+docker ps
+```
+
+This lists running containers. It shows:
+
+- container id
+- image name
+- container name
+- port mappings
+
+### Open A Shell Inside The Running Container
+
+```bash
+docker exec -it <container_id_or_name> sh
+```
+
+Use `sh`, not `bash`, because `node:20-alpine` normally has `sh`.
+
+This command:
+
+- does not build a new image
+- does not start a new container
+- starts a shell process inside the already-running container
+
+After entering the shell, useful inspection commands are:
+
+```sh
+pwd
+ls /app
+ls /app/dist
+ls /app/frontend/dist
+env
+```
+
+### What `docker exec -it <container> sh` Is Actually Doing On macOS
+
+This was another point of confusion, so here is the exact flow.
+
+When you run:
+
+```bash
+docker exec -it <container_id_or_name> sh
+```
+
+the steps are:
+
+1. Your macOS terminal runs the `docker` CLI.
+2. The CLI sends the request to the Docker daemon.
+3. On macOS, that daemon runs inside Docker Desktop's lightweight Linux VM.
+4. The daemon finds the already-running container you named.
+5. The daemon starts a new process, `sh`, inside that container.
+6. Your terminal attaches to that `sh` process interactively.
+
+So this command does **not**:
+
+- boot Linux from scratch
+- build a new image
+- create a new container
+- open the raw VM disk directly
+
+It **does**:
+
+- ask Docker to run one additional process inside an existing container
+- give you a shell inside that container's isolated filesystem/process environment
+
+That is why, once you are inside, commands like these work:
+
+```sh
+cd /app
+ls
+pwd
+env
+```
+
+Those commands are now running from inside the container, not from your normal macOS shell.
+
+## Image Name vs Container Name
+
+Another confusion point was naming.
+
+### `docker build -t markdown-demo .`
+
+This does **not** create a container name.
+
+It creates an image tag:
+
+- image name/tag: `markdown-demo`
+
+### `docker run ... markdown-demo`
+
+This creates a container from that image.
+
+If you do not provide `--name`, Docker generates a random container name such as:
+
+- `sweet_hodgkin`
+
+If you want an explicit container name, use:
+
+```bash
+docker run --name markdown-demo-app --rm -p 8501:3000 --env-file .env.docker markdown-demo
+```
+
+Then:
+
+- image name/tag = `markdown-demo`
+- container name = `markdown-demo-app`
+
+### Casing Rule
+
+For image repository names, use lowercase names such as:
+
+- `markdown-demo`
+- `steelworks`
+
+That avoids Docker naming issues and is the normal convention.
+
+## Build-Time vs Run-Time Env, In One Sentence
+
+The shortest accurate rule for this repo is:
+
+- frontend `VITE_*` values must be present during `docker build`
+- backend values like `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PORT`, and `SENTRY_DSN` are read when the container starts during `docker run`
 
 ## Setup and Troubleshooting Notes (macOS)
 
