@@ -8,6 +8,8 @@ This folder explains how source code becomes runtime artifacts in this repo.
   Explains where backend and frontend build output goes, and why backend output belongs in `dist/`.
 - [DockerBuildAndRuntime.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/build/DockerBuildAndRuntime.md)
   Explains how the Docker image is built and what the runtime container actually starts.
+- [TestDevContainerAnalysis.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/build/TestDevContainerAnalysis.md)
+  Explains the local app-container and Postgres-container workflow, the port/env confusion we debugged, and how the log stream maps to actual code paths.
 
 ## Source File Map
 

@@ -16,6 +16,110 @@ This service produces weekly defect summaries grouped by production line and def
 - The database schema in `db/schema.sql` is the source of truth.
 - The service is a small TypeScript + Express API with raw SQL queries.
 - `docs/architecture_decision_records.md` and `docs/tech_stack_decision_records.md` are for a different project (Campus Event Hub). The implementation here follows the Ops data design and schema.
+- For documentation reading order and repo context, start in [documentation/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/README.md).
+
+## Quick Start
+
+### Local Development
+
+This is the normal two-server development flow:
+
+- backend API on `http://localhost:3000`
+- frontend Vite dev server on `http://localhost:5173`
+
+1. Copy `.env.example` to `.env` and set real Postgres credentials.
+2. Create the schema:
+
+```bash
+psql -h <db-host> -p <db-port> -U <db-user> -d <db-name> -f db/schema.sql
+```
+
+3. Optionally load the sample seed data:
+
+```bash
+psql -h <db-host> -p <db-port> -U <db-user> -d <db-name> -f db/seed.sql
+```
+
+4. Install dependencies:
+
+```bash
+npm install
+```
+
+5. Start the backend:
+
+```bash
+npm run dev
+```
+
+6. In a second terminal, start the frontend:
+
+```bash
+npm run dev:ui
+```
+
+7. Open `http://localhost:5173`.
+
+### Docker App Against A Local Postgres Instance
+
+This is the production-style single-server flow:
+
+- Express serves the built frontend and the API from the same container
+- the browser hits one app port
+- the app container still needs to reach Postgres separately
+
+1. Create a Docker-specific env file such as `.env.docker`.
+2. Set the DB host and port for the Docker runtime path:
+
+```env
+PGHOST=host.docker.internal
+PGPORT=<host-facing-postgres-port>
+```
+
+Use the host-facing Postgres port here. If your Postgres container maps `5433:5432`, then `PGPORT=5433`.
+
+3. Build the image:
+
+```bash
+docker build \
+  --build-arg VITE_SENTRY_DSN="$VITE_SENTRY_DSN" \
+  -t markdown-demo .
+```
+
+4. Run the container:
+
+```bash
+docker run --rm -p 8501:3000 --env-file .env.docker markdown-demo
+```
+
+5. Open `http://localhost:8501`.
+
+Important:
+
+- left side of `-p 8501:3000` is the host port on your machine
+- right side is the Express port inside the app container
+- if your Postgres server is running in a separate Docker container, its internal port is usually `5432`
+- pgAdmin or other host tools may connect to a different host-facing port such as `5433`
+
+### Tests And Validation
+
+Run the unit/integration tests:
+
+```bash
+npm test
+```
+
+Run the quality gate used by CI:
+
+```bash
+npm run precommit:check
+```
+
+Run the browser E2E tests:
+
+```bash
+npx playwright test e2e
+```
 
 ## How To Run / Build The Code
 
@@ -89,7 +193,10 @@ Important:
 - backend env vars such as `PGHOST`, `PGUSER`, `PGPASSWORD`, `SENTRY_DSN`, and `PORT` are read at container runtime
 - `VITE_SENTRY_DSN` is a frontend Vite variable, so it must be provided at image build time with `--build-arg`
 - if you change `VITE_SENTRY_DSN`, rebuild the image so the new value is baked into the frontend bundle
+- you can map a different host port if needed, for example `-p 8501:3000`
+- for Docker-to-local-Postgres development, using a separate runtime file such as `.env.docker` is usually cleaner than reusing `.env`
 - build output details are documented in `documentation/build/BuildArtifactsAndOutputPaths.md`
+- local container-to-Postgres troubleshooting is documented in `documentation/build/TestDevContainerAnalysis.md`
 
 ## Formatter, Linter, Type Check, Coverage (TSX Equivalents)
 
