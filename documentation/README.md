@@ -11,19 +11,21 @@ The goal is to help a new developer answer two questions quickly:
 
 If you are new to the repo, read the docs in this order:
 
-1. [build/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/build/README.md)
+1. [FullBreakDown.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/FullBreakDown.md)
+   Start here for the end-to-end production and local-development picture: Render, Docker, PostgreSQL, pgAdmin, frontend-to-backend flow, logs, Sentry, CI, hooks, and uptime monitoring.
+2. [build/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/build/README.md)
    Start here to understand how the repo becomes a runnable app, where `dist/` and `frontend/dist/` come from, and how Docker packages both sides.
-2. [build/TestDevContainerAnalysis.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/build/TestDevContainerAnalysis.md)
+3. [build/TestDevContainerAnalysis.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/build/TestDevContainerAnalysis.md)
    Read this next for the concrete runtime picture: app container, Postgres container, host ports, env files, and the exact debugging issues we hit.
-3. [frontend/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/frontend/README.md)
+4. [frontend/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/frontend/README.md)
    This explains how the browser app boots, why Vite owns frontend output, and how the UI talks to the backend in dev and production-style runs.
-4. [logging/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/logging/README.md)
+5. [logging/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/logging/README.md)
    Read this before troubleshooting logs so you understand logger startup, levels, console/file output, and where logger behavior is configured.
-5. [logging-integrations/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/logging-integrations/README.md)
+6. [logging-integrations/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/logging-integrations/README.md)
    Then read this to map actual log lines back to routes, services, and database wiring.
-6. [testing/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/testing/README.md)
+7. [testing/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/testing/README.md)
    This shows what `npm test`, `npm run precommit:check`, CI, and Playwright actually exercise.
-7. [sentry/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/sentry/README.md)
+8. [sentry/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/sentry/README.md)
    Read this last once the runtime and logging story is clear, because Sentry is layered on top of those paths.
 
 ## Concise Context
@@ -39,6 +41,8 @@ The shortest accurate mental model for this repo is:
 
 ## Folder Map
 
+- [FullBreakDown.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/FullBreakDown.md)
+  One end-to-end reference for production Render hosting, local Docker/dev workflows, frontend/backend/DB communication, logging, Sentry, CI, hooks, and uptime monitoring.
 - [build/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/build/README.md)
   Build outputs, Docker packaging, and where backend/frontend artifacts are produced.
   Includes a detailed local container analysis for app-to-Postgres communication and debugging.
@@ -62,7 +66,7 @@ Then open the deeper file-level documents only after you know which part of the 
 Examples:
 
 - If the question is "Why did `npm run build` create these files?" start in [build/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/build/README.md).
-- If the question is "I need the shortest path to understand the whole repo," follow the `Recommended Reading Order` above from top to bottom.
+- If the question is "I need the shortest path to understand the whole repo," start with [FullBreakDown.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/FullBreakDown.md) and then follow the `Recommended Reading Order`.
 - If the question is "Why does the frontend use Vite instead of plain `tsc`?" start in [frontend/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/frontend/README.md).
 - If the question is "What does `npm test` actually exercise?" start in [testing/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/testing/README.md).
 - If the question is "Where did this log line come from?" start in [logging-integrations/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/logging-integrations/README.md) and [logging/README.md](/Users/wuzi/Desktop/Practicum_in_CS/Markdown-demo/documentation/logging/README.md).
