@@ -308,6 +308,7 @@ export default function App(): JSX.Element {
             Generate consistent weekly summaries by production line and defect
             type. Drill down to validate totals and track excluded records.
           </p>
+          <p className="eyebrow">CD Test Marker</p>
         </div>
         <div className="hero-card">
           <div>

@@ -1,46 +1,72 @@
+# The workflow file name usually reflects the workflow's purpose.
+# This workflow runs continuous integration checks for pull requests and main branch updates.
 name: CI
 
+# Defines when this workflow should run.
+# It triggers for pull request updates and for pushes to the main branch.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
 
+# Jobs are the top-level units of work in a GitHub Actions workflow.
 jobs:
-  precommit-checks:
+  precommit-checks: # Job identifier shown in workflow internals and logs
+    # Specifies the GitHub-hosted runner used for this job.
     runs-on: ubuntu-latest
+
+    # Services are supporting containers started alongside the job.
+    # This PostgreSQL container is used by the app and E2E tests.
     services:
       postgres:
-        image: postgres:15
+        image: postgres:15 # PostgreSQL version used for CI testing
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
           POSTGRES_DB: ops_test
-        ports: ["5432:5432"]
+        ports: ["5432:5432"] # Exposes PostgreSQL on localhost:5432 inside the runner
         options: >-
           --health-cmd="pg_isready -U postgres"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+
+    # Steps run sequentially from top to bottom.
     steps:
       - name: Check out repo
+        # Downloads the repository contents into the runner workspace.
         uses: actions/checkout@v4
+
       - name: Set up Node
+        # Installs Node.js and enables npm dependency caching.
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+
       - name: Install dependencies
+        # Installs exact dependencies from package-lock.json for reproducible CI builds.
         run: npm ci
+
       - name: Install Playwright browsers
+        # Installs browser binaries and required OS packages for Playwright tests.
         run: npx playwright install --with-deps
+
       - name: Seed database
+        # Installs the PostgreSQL CLI, creates the schema, and loads seed data.
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
           PGPASSWORD=${{ secrets.CI_POSTGRES_PASSWORD }} psql -h localhost -U postgres -d ops_test -f db/schema.sql
           PGPASSWORD=${{ secrets.CI_POSTGRES_PASSWORD }} psql -h localhost -U postgres -d ops_test -f db/seed.sql
+
       - name: Pre-commit checks
+        # Runs the same formatting, linting, type-checking, and unit test checks enforced before commits.
         run: npm run precommit:check
+
       - name: E2E tests
+        # Provides database connection settings to the backend started by Playwright's webServer config.
         env:
           PGHOST: localhost
           PGPORT: 5432
@@ -48,3 +74,7 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
         run: npx playwright test e2e
+
+      - name: Build docker image
+        # Verifies that the production Docker image can be built successfully in CI.
+        run: docker build -t demo-app:ci .
